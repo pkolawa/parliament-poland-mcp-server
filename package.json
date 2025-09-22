@@ -1,7 +1,7 @@
 {
-  "name": "krs-poland-mcp-server",
+  "name": "parliament-poland-mcp-server",
   "version": "1.0.0",
-  "description": "The MCP server for KRS Poland public API.",
+  "description": "The MCP server for Parliament of Poland public API.",
   "main": "./build/index.mjs",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
@@ -10,12 +10,13 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/pkolawa/krs-poland-mcp-server.git"
+    "url": "git+https://github.com/pkolawa/parliament-poland-mcp-server.git"
   },
   "keywords": [
     "mcp",
     "poland",
-    "krs",
+    "parliament",
+    "government",
     "server"
   ],
   "author": {
@@ -28,12 +29,12 @@
   ],
   "type": "module",
   "bin": {
-    "krs-poland-mcp-server": "build/index.mjs"
+    "parliament-poland-mcp-server": "build/index.mjs"
   },
   "bugs": {
-    "url": "https://github.com/pkolawa/krs-poland-mcp-server/issues"
+    "url": "https://github.com/pkolawa/parliament-poland-mcp-server/issues"
   },
-  "homepage": "https://github.com/pkolawa/krs-poland-mcp-server#readme",
+  "homepage": "https://github.com/pkolawa/parliament-poland-mcp-server#readme",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.18.0",
     "zod": "^3.25.76"
