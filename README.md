@@ -1,8 +1,8 @@
 ![logo](logo.png)
 
-# KRS Poland MCP Server
+# Parliament of Poland MCP Server
 
-An MCP server for the Polish National Court Register (KRS) public API.
+An MCP server for the Polish Parliament public API.
 
 ## Usage
 
@@ -13,7 +13,7 @@ This server is designed to be run with `npx`, allowing you to use it as a tool p
 To start the server, run the following command:
 
 ```bash
-npx krs-poland-mcp-server
+npx parliament-poland-mcp-server
 ```
 
 ### Configuration for LLM Clients
@@ -23,18 +23,18 @@ To integrate this server with an LLM client (like LM Studio or others that suppo
 ```json
 {
   "mcpServers": {
-    "krs-poland-mcp-server": {
+    "parliament-poland-mcp-server": {
       "command": "npx",
       "args": [
         "-y",
-        "krs-poland-mcp-server"
+        "parliament-poland-mcp-server"
       ]
     }
   }
 }
 ```
 
-This configuration tells the client how to start the KRS tool server.
+This configuration tells the client how to start the tool server.
 
 ## Development
 
