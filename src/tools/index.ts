@@ -14,8 +14,8 @@ import { getWrittenQuestionsTool } from "./writtenQuestions.js";
 
 export const tools = {
   "get-terms": getTermsTool,
-  "get-mps": getMpsTool,
-  "get-mp": getMpTool,
+  "get-members": getMpsTool,
+  "get-member": getMpTool,
   "get-clubs": getClubsTool,
   "get-committees": getCommitteesTool,
   "get-interpellations": getInterpellationsTool,
