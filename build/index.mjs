@@ -4097,7 +4097,7 @@ var NEVER = INVALID;
 
 // src/tools/mps.ts
 var getMpTool = {
-  description: "Get information about a member of parliament.",
+  description: "Get information about a member of Parliament.",
   schema: {
     term: external_exports.number().int().positive().describe("Term of the Sejm"),
     id: external_exports.number().int().positive().describe("ID of the MP")
@@ -4448,9 +4448,9 @@ ${JSON.stringify(votings, null, 2)}`
 
 // src/tools/writtenQuestions.ts
 var getWrittenQuestionsTool = {
-  description: "Pobierz list\u0119 zapyta\u0144 pisemnych dla danej kadencji.",
+  description: "Get a list of written questions for a given term.",
   schema: {
-    term: external_exports.number().int().positive().describe("Numer kadencji Sejmu")
+    term: external_exports.number().int().positive().describe("Term number of the Sejm")
   },
   handler: async (args) => {
     const { term } = args;
@@ -4460,7 +4460,7 @@ var getWrittenQuestionsTool = {
         content: [
           {
             type: "text",
-            text: `Nie uda\u0142o si\u0119 pobra\u0107 listy zapyta\u0144 pisemnych dla kadencji ${term}.`
+            text: `Failed to fetch the list of written questions for term ${term}.`
           }
         ]
       };
@@ -4469,7 +4469,7 @@ var getWrittenQuestionsTool = {
       content: [
         {
           type: "text",
-          text: `Pobrano list\u0119 zapyta\u0144 pisemnych dla kadencji ${term}:
+          text: `Fetched the list of written questions for term ${term}:
 
 ${JSON.stringify(writtenQuestions, null, 2)}`
         }
@@ -4481,8 +4481,8 @@ ${JSON.stringify(writtenQuestions, null, 2)}`
 // src/tools/index.ts
 var tools = {
   "get-terms": getTermsTool,
-  "get-mps": getMpsTool,
-  "get-mp": getMpTool,
+  "get-members": getMpsTool,
+  "get-member": getMpTool,
   "get-clubs": getClubsTool,
   "get-committees": getCommitteesTool,
   "get-interpellations": getInterpellationsTool,
