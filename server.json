@@ -1,11 +1,10 @@
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-07-09/server.schema.json",
-  "name": "io.github.pkolawa/mcp-parliament-poland",
-  "description": "Polish National government's registry of all businesses, foundations, and other legal entities.",
+  "name": "io.github.pkolawa.mcp-sejm-poland",
+  "description": "Polish Parliament (Sejm) data MCP server: proceedings, bills, votes, members.",
   "status": "active",
   "repository": {
-    "url": "https://github.com/pkolawa/mcp-parliament-poland",
-    "source": "github"
+    "url": "https://github.com/pkolawa/parliament-poland-mcp-server"
   },
   "version": "1.0.1",
   "packages": [
