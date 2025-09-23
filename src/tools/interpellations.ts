@@ -44,3 +44,37 @@ export const getInterpellationsTool = {
     };
   },
 };
+
+export const getInterpellationTool = {
+  description: "Get detailed information about a specific interpellation.",
+  schema: {
+    term: z.number().int().positive().describe("Term of the Sejm"),
+    id: z.number().int().positive().describe("ID of the interpellation"),
+  },
+  handler: async (args: { term: number; id: number }) => {
+    const { term, id } = args;
+    const interpellation = await makeSejmRequest<any>(
+      `/term${term}/interpellations/${id}`
+    );
+
+    if (!interpellation) {
+      return {
+        content: [
+          {
+            type: "text" as const,
+            text: `Failed to fetch details for interpellation ${id} in term ${term}.`,
+          },
+        ],
+      };
+    }
+
+    return {
+      content: [
+        {
+          type: "text" as const,
+          text: `Fetched details for interpellation ${id} in term ${term}:\n\n${JSON.stringify(interpellation, null, 2)}`,
+        },
+      ],
+    };
+  },
+};
