@@ -5,10 +5,15 @@ export const getVideosTool = {
   description: "Get a list of video recordings for a given term.",
   schema: {
     term: z.number().int().positive().describe("Term of the Sejm"),
+    offset: z.number().int().positive().optional().describe("Offset for pagination"),
+    limit: z.number().int().positive().optional().describe("Limit for pagination"),
   },
-  handler: async (args: { term: number }) => {
-    const { term } = args;
-    const videos = await makeSejmRequest<any[]>(`/term${term}/videos`);
+  handler: async (args: { term: number, offset?: number, limit?: number }) => {
+    const { term, offset, limit } = args;
+    const videos = await makeSejmRequest<any[]>(
+      `/term${term}/videos`,
+      { offset, limit },
+    );
 
     if (!videos) {
       return {

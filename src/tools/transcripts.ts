@@ -5,10 +5,15 @@ export const getTranscriptsTool = {
   description: "Get a list of transcripts for a given term.",
   schema: {
     term: z.number().int().positive().describe("Term of the Sejm"),
+    offset: z.number().int().positive().optional().describe("Offset for pagination"),
+    limit: z.number().int().positive().optional().describe("Limit for pagination"),
   },
-  handler: async (args: { term: number }) => {
-    const { term } = args;
-    const transcripts = await makeSejmRequest<any[]>(`/term${term}/transcripts`);
+  handler: async (args: { term: number, offset?: number, limit?: number }) => {
+    const { term, offset, limit } = args;
+    const transcripts = await makeSejmRequest<any[]>(
+      `/term${term}/transcripts`,
+      { offset, limit },
+    );
 
     if (!transcripts) {
       return {

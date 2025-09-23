@@ -3,9 +3,13 @@ import { makeSejmRequest } from "../utils/api.js";
 
 export const getTermsTool = {
   description: "Get a list of Sejm terms.",
-  schema: {},
-  handler: async () => {
-    const terms = await makeSejmRequest<any[]>("/term");
+  schema: {
+    offset: z.number().int().positive().optional().describe("Offset for pagination"),
+    limit: z.number().int().positive().optional().describe("Limit for pagination"),
+  },
+  handler: async (args: { offset?: number, limit?: number }) => {
+    const { offset, limit } = args;
+    const terms = await makeSejmRequest<any[]>("/term", { offset, limit });
 
     if (!terms) {
       return {
