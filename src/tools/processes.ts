@@ -7,13 +7,12 @@ export const getProcessesTool = {
     term: z.number().int().positive().describe("Term of the Sejm"),
     offset: z.number().int().positive().optional().describe("Offset for pagination"),
     limit: z.number().int().positive().optional().describe("Limit for pagination"),
-    sort_by: z.string().optional().describe("Sort by a specific field."),
   },
-  handler: async (args: { term: number, offset?: number, limit?: number, sort_by?: string }) => {
-    const { term, offset, limit, sort_by } = args;
+  handler: async (args: { term: number, offset?: number, limit?: number }) => {
+    const { term, offset, limit } = args;
     const processes = await makeSejmRequest<any[]>(
-      `/term${term}/legislative-processes`,
-      { offset, limit, sort_by },
+      `/term${term}/processes`,
+      { offset, limit },
     );
 
     if (!processes) {
@@ -21,7 +20,7 @@ export const getProcessesTool = {
         content: [
           {
             type: "text" as const,
-            text: `Failed to fetch the list of legislative processes for term ${term}.`,
+            text: `Failed to fetch the list of processes for term ${term}`,
           },
         ],
       };
@@ -31,7 +30,7 @@ export const getProcessesTool = {
       content: [
         {
           type: "text" as const,
-          text: `Fetched the list of legislative processes for term ${term}:\n\n${JSON.stringify(processes, null, 2)}`,
+          text: `Fetched the list of processes for term ${term}:\n\n${JSON.stringify(processes, null, 2)}`,
         },
       ],
     };
