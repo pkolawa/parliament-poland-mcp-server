@@ -40,7 +40,7 @@ This configuration tells the client how to start the tool server.
 
 The server provides the following functions:
 
-- [ ] `get-terms`: Get a list of Sejm terms.
+- [x] `get-terms`: Get a list of Sejm terms.
 - [x] `get-members`: Get a list of MPs for a given term.
 - [ ] `get-member`: Get information about a member of Parliament.
 - [x] `get-clubs`: Get a list of clubs for a given term.
