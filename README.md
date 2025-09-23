@@ -45,13 +45,13 @@ The server provides the following functions:
 - [ ] `get-member`: Get information about a member of Parliament.
 - [x] `get-clubs`: Get a list of clubs for a given term.
 - [ ] `get-committees`: Get a list of committees for a given term.
-- [ ] `get-interpellations`: Get a list of interpellations for a given term.
+- [x] `get-interpellations`: Get a list of interpellations for a given term.
 - [ ] `get-prints`: Get a list of prints for a given term.
 - [ ] `get-proceedings`: Get a list of proceedings for a given term.
 - [ ] `get-processes`: Get a list of legislative processes for a given term.
 - [ ] `get-transcripts`: Get a list of transcripts for a given term.
-- [ ] `get-videos`: Get a list of video recordings for a given term.
-- [ ] `get-votings`: Get a list of votings for a given term.
+- [x] `get-videos`: Get a list of video recordings for a given term.
+- [x] `get-votings`: Get a list of votings for a given term.
 - [ ] `get-written-questions`: Get a list of written questions for a given term.
 
 ## Development
