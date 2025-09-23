@@ -36,3 +36,37 @@ export const getClubsTool = {
     };
   },
 };
+
+export const getClubTool = {
+  description: "Get detailed information about a specific club.",
+  schema: {
+    term: z.number().int().positive().describe("Term of the Sejm"),
+    id: z.string().describe("ID of the club (e.g., 'KO', 'PIS')"),
+  },
+  handler: async (args: { term: number; id: string }) => {
+    const { term, id } = args;
+    const club = await makeSejmRequest<any>(
+      `/term${term}/clubs/${id}`
+    );
+
+    if (!club) {
+      return {
+        content: [
+          {
+            type: "text" as const,
+            text: `Failed to fetch details for club ${id} in term ${term}.`,
+          },
+        ],
+      };
+    }
+
+    return {
+      content: [
+        {
+          type: "text" as const,
+          text: `Fetched details for club ${id} in term ${term}:\n\n${JSON.stringify(club, null, 2)}`,
+        },
+      ],
+    };
+  },
+};

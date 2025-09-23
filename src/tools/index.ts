@@ -1,7 +1,7 @@
 
 import { getTermsTool } from "./terms.js";
 import { getMpsTool, getMpTool } from "./mps.js";
-import { getClubsTool } from "./clubs.js";
+import { getClubsTool, getClubTool } from "./clubs.js";
 import { getCommitteesTool } from "./committees.js";
 import { getInterpellationsTool } from "./interpellations.js";
 import { getPrintsTool } from "./prints.js";
@@ -19,6 +19,7 @@ export const tools = {
   "get-members": getMpsTool,
   "get-member": getMpTool,
   "get-clubs": getClubsTool,
+  "get-club": getClubTool,
   "get-committees": getCommitteesTool,
   "get-interpellations": getInterpellationsTool,
   "get-prints": getPrintsTool,
