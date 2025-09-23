@@ -4,7 +4,7 @@ import { tools } from "./tools/index.js";
 
 export const server = new McpServer({
   name: "Parliament Poland MCP Server",
-  version: "1.0.0",
+  version: "1.0.3",
 });
 
 for (const [name, tool] of Object.entries(tools)) {
