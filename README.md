@@ -42,61 +42,61 @@ The server provides the following functions:
 
 ### Bilateral Groups
 
-*   `getBilateralGroupsTool`: Get a list of bilateral groups in the Sejm.
+- [ ] `getBilateralGroupsTool`: Get a list of bilateral groups in the Sejm.
 
 ### Clubs
 
-*   `getClubsTool`: Get a list of clubs for a given term.
-*   `getClubTool`: Get detailed information about a specific club.
+- [ ] `getClubsTool`: Get a list of clubs for a given term.
+- [ ] `getClubTool`: Get detailed information about a specific club.
 
 ### Committees
 
-*   `getCommitteesTool`: Get a list of committees for a given term.
-*   `getCommitteeTool`: Get detailed information about a specific committee.
+- [ ] `getCommitteesTool`: Get a list of committees for a given term.
+- [ ] `getCommitteeTool`: Get detailed information about a specific committee.
 
 ### Interpellations
 
-*   `getInterpellationsTool`: Get a list of interpellations for a given term.
-*   `getInterpellationTool`: Get detailed information about a specific interpellation.
+- [ ] `getInterpellationsTool`: Get a list of interpellations for a given term.
+- [ ] `getInterpellationTool`: Get detailed information about a specific interpellation.
 
 ### MPs
 
-*   `getMpTool`: Get information about a member of Parliament.
-*   `getMpsTool`: Get a list of MPs for a given term.
+- [ ] `getMpTool`: Get information about a member of Parliament.
+- [ ] `getMpsTool`: Get a list of MPs for a given term.
 
 ### Prints
 
-*   `getPrintsTool`: Get a list of prints for a given term.
-*   `getPrintTool`: Get detailed information about a specific print.
+- [ ] `getPrintsTool`: Get a list of prints for a given term.
+- [ ] `getPrintTool`: Get detailed information about a specific print.
 
 ### Proceedings
 
-*   `getProceedingsTool`: Get a list of proceedings for a given term.
+- [ ] `getProceedingsTool`: Get a list of proceedings for a given term.
 
 ### Legislative Process
 
-*   `getProcessTool`: Get information about a specific legislative process.
-*   `getProcessesTool`: Get a list of legislative processes for a given term.
+- [ ] `getProcessTool`: Get information about a specific legislative process.
+- [ ] `getProcessesTool`: Get a list of legislative processes for a given term.
 
 ### Terms
 
-*   `getTermsTool`: Get a list of Sejm terms.
+- [ ] `getTermsTool`: Get a list of Sejm terms.
 
 ### Transcripts
 
-*   `getTranscriptsTool`: Get a list of transcripts for a given term.
+- [ ] `getTranscriptsTool`: Get a list of transcripts for a given term.
 
 ### Videos
 
-*   `getVideosTool`: Get a list of video recordings for a given term.
+- [ ] `getVideosTool`: Get a list of video recordings for a given term.
 
 ### Votings
 
-*   `getVotingsTool`: Get a list of votings for a given term.
+- [ ] `getVotingsTool`: Get a list of votings for a given term.
 
 ### Written Questions
 
-*   `getWrittenQuestionsTool`: Get a list of written questions for a given term.
+- [ ] `getWrittenQuestionsTool`: Get a list of written questions for a given term.
 
 ## Development
 
