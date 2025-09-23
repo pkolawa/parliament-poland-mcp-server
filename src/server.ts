@@ -4,11 +4,11 @@ import { tools } from "./tools/index.js";
 
 export const server = new McpServer({
   name: "Parliament Poland MCP Server",
-  version: "1.0.8",
+  version: "1.0.9",
 });
 
 for (const [name, tool] of Object.entries(tools)) {
-  server.registerTool(tool.description,
+  server.registerTool(tool.description.replace(/\s+/g, "-"),
     {
         title: name,
         description: tool.description,
