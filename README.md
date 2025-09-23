@@ -43,7 +43,7 @@ The server provides the following functions:
 - [ ] `get-terms`: Get a list of Sejm terms.
 - [x] `get-members`: Get a list of MPs for a given term.
 - [ ] `get-member`: Get information about a member of Parliament.
-- [ ] `get-clubs`: Get a list of clubs for a given term.
+- [x] `get-clubs`: Get a list of clubs for a given term.
 - [ ] `get-committees`: Get a list of committees for a given term.
 - [ ] `get-interpellations`: Get a list of interpellations for a given term.
 - [ ] `get-prints`: Get a list of prints for a given term.
