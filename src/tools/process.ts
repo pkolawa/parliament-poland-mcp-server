@@ -2,7 +2,7 @@ import { z } from "zod";
 import { makeSejmRequest } from "../utils/api.js";
 
 export const getProcessTool = {
-  description: "Get information about a specific legislative process.",
+  description: "Get information about a specific legislative process",
   schema: {
     term: z.number().int().positive().describe("Term of the Sejm"),
     processNumber:

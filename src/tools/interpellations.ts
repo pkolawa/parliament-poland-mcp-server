@@ -2,7 +2,7 @@ import { z } from "zod";
 import { makeSejmRequest } from "../utils/api.js";
 
 export const getInterpellationsTool = {
-  description: "Get a list of interpellations for a given term.",
+  description: "Get a list of interpellations for a given term",
   schema: {
     term: z.number().int().positive().describe("Term of the Sejm"),
     offset: z.number().int().positive().optional().describe("Offset for pagination"),
@@ -46,7 +46,7 @@ export const getInterpellationsTool = {
 };
 
 export const getInterpellationTool = {
-  description: "Get detailed information about a specific interpellation.",
+  description: "Get detailed information about a specific interpellation",
   schema: {
     term: z.number().int().positive().describe("Term of the Sejm"),
     id: z.number().int().positive().describe("ID of the interpellation"),

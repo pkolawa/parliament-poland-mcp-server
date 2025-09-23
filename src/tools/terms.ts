@@ -2,7 +2,7 @@ import { z } from "zod";
 import { makeSejmRequest } from "../utils/api.js";
 
 export const getTermsTool = {
-  description: "Get a list of Sejm terms.",
+  description: "Get a list of Sejm terms",
   schema: {
     offset: z.number().int().positive().optional().describe("Offset for pagination"),
     limit: z.number().int().positive().optional().describe("Limit for pagination"),

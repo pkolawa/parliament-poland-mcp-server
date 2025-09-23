@@ -2,7 +2,7 @@ import { z } from "zod";
 import { makeSejmRequest } from "../utils/api.js";
 
 export const getPrintsTool = {
-  description: "Get a list of prints for a given term.",
+  description: "Get a list of prints for a given term",
   schema: {
     term: z.number().int().positive().describe("Term of the Sejm"),
     offset: z.number().int().positive().optional().describe("Offset for pagination"),
@@ -39,7 +39,7 @@ export const getPrintsTool = {
 };
 
 export const getPrintTool = {
-  description: "Get detailed information about a specific print.",
+  description: "Get detailed information about a specific print",
   schema: {
     term: z.number().int().positive().describe("Term of the Sejm"),
     printNumber: z.number().int().positive().describe("Number of the print"),

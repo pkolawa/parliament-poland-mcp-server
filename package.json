@@ -1,7 +1,7 @@
 {
   "name": "parliament-poland-mcp-server",
-  "version": "1.0.9",
-  "description": "The MCP server for Parliament of Poland public API.",
+  "version": "1.0.10",
+  "description": "The MCP server for Parliament of Poland public API",
   "main": "./build/index.mjs",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",

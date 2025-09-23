@@ -3,7 +3,7 @@ import { makeSejmRequest } from "../utils/api.js";
 
 
 export const getMpTool = {
-  description: "Get information about a member of Parliament.",
+  description: "Get information about a member of Parliament",
   schema: {
     term: z.number().int().positive().describe("Term of the Sejm"),
     id: z.number().int().positive().describe("ID of the MP"),
@@ -36,7 +36,7 @@ export const getMpTool = {
 
 export const getMpsTool = {
 
-  description: "Get a list of MPs for a given term.",
+  description: "Get a list of MPs for a given term",
   schema: {
     term: z.number().int().positive().describe("Term of the Sejm"),
     offset: z.number().int().positive().optional().describe("Offset for pagination"),

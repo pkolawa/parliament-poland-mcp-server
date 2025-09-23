@@ -2,7 +2,7 @@ import { z } from "zod";
 import { makeSejmRequest } from "../utils/api.js";
 
 export const getWrittenQuestionsTool = {
-  description: "Get a list of written questions for a given term.",
+  description: "Get a list of written questions for a given term",
   schema: {
     term: z.number().int().positive().describe("Term number of the Sejm"),
     offset: z.number().int().positive().optional().describe("Offset for pagination"),

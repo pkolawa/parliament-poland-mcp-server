@@ -2,7 +2,7 @@ import { z } from "zod";
 import { makeSejmRequest } from "../utils/api.js";
 
 export const getVotingsTool = {
-  description: "Get a list of votings for a given term.",
+  description: "Get a list of votings for a given term",
   schema: {
     term: z.number().int().positive().describe("Term of the Sejm"),
     proceeding: z.number().int().positive().describe("Sejm sitting number"),
