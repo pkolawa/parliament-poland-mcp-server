@@ -1,6 +1,6 @@
 {
   "name": "parliament-poland-mcp-server",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "description": "The MCP server for Parliament of Poland public API.",
   "main": "./build/index.mjs",
   "scripts": {
