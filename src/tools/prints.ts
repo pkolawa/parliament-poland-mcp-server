@@ -37,3 +37,37 @@ export const getPrintsTool = {
     };
   },
 };
+
+export const getPrintTool = {
+  description: "Get detailed information about a specific print.",
+  schema: {
+    term: z.number().int().positive().describe("Term of the Sejm"),
+    printNumber: z.number().int().positive().describe("Number of the print"),
+  },
+  handler: async (args: { term: number; printNumber: number }) => {
+    const { term, printNumber } = args;
+    const print = await makeSejmRequest<any>(
+      `/term${term}/prints/${printNumber}`
+    );
+
+    if (!print) {
+      return {
+        content: [
+          {
+            type: "text" as const,
+            text: `Failed to fetch details for print ${printNumber} in term ${term}.`,
+          },
+        ],
+      };
+    }
+
+    return {
+      content: [
+        {
+          type: "text" as const,
+          text: `Fetched details for print ${printNumber} in term ${term}:\n\n${JSON.stringify(print, null, 2)}`,
+        },
+      ],
+    };
+  },
+};
