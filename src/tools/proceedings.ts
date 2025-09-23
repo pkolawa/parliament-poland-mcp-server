@@ -11,7 +11,7 @@ export const getProceedingsTool = {
   handler: async (args: { term: number, offset?: number, limit?: number }) => {
     const { term, offset, limit } = args;
     const proceedings = await makeSejmRequest<any[]>(
-      `/term${term}/proceedings`,
+      `/term${term}/sittings`,
       { offset, limit },
     );
 

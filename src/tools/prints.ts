@@ -7,12 +7,13 @@ export const getPrintsTool = {
     term: z.number().int().positive().describe("Term of the Sejm"),
     offset: z.number().int().positive().optional().describe("Offset for pagination"),
     limit: z.number().int().positive().optional().describe("Limit for pagination"),
+    sort_by: z.string().optional().describe("Sort by a specific field."),
   },
-  handler: async (args: { term: number, offset?: number, limit?: number }) => {
-    const { term, offset, limit } = args;
+  handler: async (args: { term: number, offset?: number, limit?: number, sort_by?: string }) => {
+    const { term, offset, limit, sort_by } = args;
     const prints = await makeSejmRequest<any[]>(
       `/term${term}/prints`,
-      { offset, limit },
+      { offset, limit, sort_by },
     );
 
     if (!prints) {

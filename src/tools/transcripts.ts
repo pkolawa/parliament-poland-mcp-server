@@ -11,7 +11,7 @@ export const getTranscriptsTool = {
   handler: async (args: { term: number, offset?: number, limit?: number }) => {
     const { term, offset, limit } = args;
     const transcripts = await makeSejmRequest<any[]>(
-      `/term${term}/transcripts`,
+      `/term${term}/speeches`,
       { offset, limit },
     );
 
