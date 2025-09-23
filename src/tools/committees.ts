@@ -36,3 +36,37 @@ export const getCommitteesTool = {
     };
   },
 };
+
+export const getCommitteeTool = {
+  description: "Get detailed information about a specific committee.",
+  schema: {
+    term: z.number().int().positive().describe("Term of the Sejm"),
+    id: z.string().describe("ID of the committee (e.g., 'KFP', 'ESM')"),
+  },
+  handler: async (args: { term: number; id: string }) => {
+    const { term, id } = args;
+    const committee = await makeSejmRequest<any>(
+      `/term${term}/committees/${id}`
+    );
+
+    if (!committee) {
+      return {
+        content: [
+          {
+            type: "text" as const,
+            text: `Failed to fetch details for committee ${id} in term ${term}.`,
+          },
+        ],
+      };
+    }
+
+    return {
+      content: [
+        {
+          type: "text" as const,
+          text: `Fetched details for committee ${id} in term ${term}:\n\n${JSON.stringify(committee, null, 2)}`,
+        },
+      ],
+    };
+  },
+};
