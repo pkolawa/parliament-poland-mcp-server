@@ -9,8 +9,8 @@
   "version": "1.0.11",
   "packages": [
     {
-      "registry_type": "npm",
-      "registry_base_url": "https://registry.npmjs.org",
+      "registryType": "npm",
+      "registryBaseUrl": "https://registry.npmjs.org",
       "identifier": "parliament-poland-mcp-server",
       "version": "1.0.11",
       "transport": {
