@@ -2,30 +2,32 @@ import { jest } from "@jest/globals";
 import { makeSejmRequest } from "../../src/utils/api.js";
 
 const originalFetch = globalThis.fetch;
+const fetchMock: jest.MockedFunction<typeof fetch> = jest.fn();
 
 beforeEach(() => {
-  globalThis.fetch = jest.fn() as any;
+  fetchMock.mockReset();
+  globalThis.fetch = fetchMock;
 });
 
 afterEach(() => {
-  if (originalFetch) {
-    globalThis.fetch = originalFetch;
-  } else {
-    delete (globalThis as any).fetch;
-  }
+  globalThis.fetch = originalFetch;
   jest.restoreAllMocks();
 });
 
 describe("makeSejmRequest", () => {
   it("builds the URL with params and returns JSON on success", async () => {
-    const json = jest.fn().mockResolvedValue({ ok: true });
-    (globalThis.fetch as jest.Mock).mockResolvedValue({ ok: true, json });
+    fetchMock.mockResolvedValue(
+      new Response(JSON.stringify({ ok: true }), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      })
+    );
 
     const result = await makeSejmRequest("/term", { offset: 2, limit: 5 });
 
     expect(result).toEqual({ ok: true });
-    const [url, options] = (globalThis.fetch as jest.Mock).mock.calls[0];
-    const parsed = new URL(url);
+    const [url, options] = fetchMock.mock.calls[0] as [string, RequestInit];
+    const parsed = new URL(String(url));
     expect(`${parsed.origin}${parsed.pathname}`).toBe(
       "https://api.sejm.gov.pl/sejm/term"
     );
@@ -36,10 +38,7 @@ describe("makeSejmRequest", () => {
 
   it("returns null and logs when the request fails", async () => {
     const errorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
-    (globalThis.fetch as jest.Mock).mockResolvedValue({
-      ok: false,
-      status: 500,
-    });
+    fetchMock.mockResolvedValue(new Response("", { status: 500 }));
 
     const result = await makeSejmRequest("/term");
 
