@@ -6,6 +6,7 @@
   "main": "./build/index.mjs",
   "scripts": {
     "test": "NODE_OPTIONS=--experimental-vm-modules jest",
+    "test:live-api": "RUN_LIVE_API_TESTS=true NODE_OPTIONS=--experimental-vm-modules jest tests/integration/sejmApi.live.test.ts --runInBand",
     "build": "node build.mjs",
     "start": "node build/index.mjs"
   },
