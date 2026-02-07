@@ -5,8 +5,8 @@
   "description": "The MCP server for Parliament of Poland public API",
   "main": "./build/index.mjs",
   "scripts": {
-    "test": "NODE_OPTIONS=--experimental-vm-modules jest",
-    "test:live-api": "RUN_LIVE_API_TESTS=true NODE_OPTIONS=--experimental-vm-modules jest tests/integration/sejmApi.live.test.ts --runInBand",
+    "test": "jest",
+    "test:live-api": "RUN_LIVE_API_TESTS=true jest --config jest.live.config.cjs --runInBand",
     "build": "node build.mjs",
     "start": "node build/index.mjs"
   },

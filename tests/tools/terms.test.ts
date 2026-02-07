@@ -1,29 +1,30 @@
 import { jest } from "@jest/globals";
+import { makeSejmRequest } from "../../src/utils/api.js";
+import { getTermsTool } from "../../src/tools/terms.js";
 
 type MakeSejmRequestFn = (
   endpoint: string,
   params?: Record<string, unknown>
 ) => Promise<unknown>;
 
-const makeSejmRequest: jest.MockedFunction<MakeSejmRequestFn> = jest.fn();
-
-await jest.unstable_mockModule("../../src/utils/api.js", () => ({
-  makeSejmRequest,
+jest.mock("../../src/utils/api.js", () => ({
+  makeSejmRequest: jest.fn(),
 }));
 
-const { getTermsTool } = await import("../../src/tools/terms.js");
+const makeSejmRequestMock =
+  makeSejmRequest as jest.MockedFunction<MakeSejmRequestFn>;
 
 beforeEach(() => {
-  makeSejmRequest.mockReset();
+  makeSejmRequestMock.mockReset();
 });
 
 describe("getTermsTool", () => {
   it("returns a success message with data", async () => {
-    makeSejmRequest.mockResolvedValue([{ term: 10 }]);
+    makeSejmRequestMock.mockResolvedValue([{ term: 10 }]);
 
     const result = await getTermsTool.handler({ offset: 1, limit: 2 });
 
-    expect(makeSejmRequest).toHaveBeenCalledWith("/term", {
+    expect(makeSejmRequestMock).toHaveBeenCalledWith("/term", {
       offset: 1,
       limit: 2,
     });
@@ -31,7 +32,7 @@ describe("getTermsTool", () => {
   });
 
   it("returns a failure message when the API fails", async () => {
-    makeSejmRequest.mockResolvedValue(null);
+    makeSejmRequestMock.mockResolvedValue(null);
 
     const result = await getTermsTool.handler({});
 
