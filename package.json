@@ -1,7 +1,7 @@
 {
   "mcpName": "io.github.pkolawa/parliament-poland-mcp-server",
   "name": "parliament-poland-mcp-server",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "description": "The MCP server for Parliament of Poland public API",
   "main": "./build/index.mjs",
   "scripts": {
