@@ -22,7 +22,7 @@ describe("getBilateralGroupsTool", () => {
   it("returns a success message with data", async () => {
     makeSejmRequestMock.mockResolvedValue([{ id: 1 }]);
 
-    const result = await getBilateralGroupsTool.handler({});
+    const result = await getBilateralGroupsTool.handler();
 
     expect(makeSejmRequestMock).toHaveBeenCalledWith("/bilateralGroups");
     expect(result.content[0].text).toContain(
@@ -33,7 +33,7 @@ describe("getBilateralGroupsTool", () => {
   it("returns a failure message when the API fails", async () => {
     makeSejmRequestMock.mockResolvedValue(null);
 
-    const result = await getBilateralGroupsTool.handler({});
+    const result = await getBilateralGroupsTool.handler();
 
     expect(result.content[0].text).toContain(
       "Failed to fetch the list of bilateral groups."
