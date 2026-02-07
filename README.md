@@ -104,8 +104,10 @@ To run the server in a development environment:
 
 1.  Clone the repository.
 2.  Install dependencies: `npm install`
-3.  Build the project: `npm run build`
-4.  Run the server: `npm start`
+3.  Run unit tests: `npm test`
+4.  Run live API integration tests (requires internet access): `npm run test:live-api`
+5.  Build the project: `npm run build`
+6.  Run the server: `npm start`
 
 ## Author
 
