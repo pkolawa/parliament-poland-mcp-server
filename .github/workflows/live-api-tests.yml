@@ -1,0 +1,27 @@
+name: live-api-tests
+
+on:
+  schedule:
+    # GitHub Actions cron is in UTC.
+    - cron: "30 5 * * *"
+  workflow_dispatch:
+
+jobs:
+  sejm-api-healthcheck:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run live API tests
+        run: npm run test:live-api
