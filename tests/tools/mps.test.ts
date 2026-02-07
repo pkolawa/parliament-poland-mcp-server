@@ -1,6 +1,11 @@
 import { jest } from "@jest/globals";
 
-const makeSejmRequest = jest.fn();
+type MakeSejmRequestFn = (
+  endpoint: string,
+  params?: Record<string, unknown>
+) => Promise<unknown>;
+
+const makeSejmRequest: jest.MockedFunction<MakeSejmRequestFn> = jest.fn();
 
 await jest.unstable_mockModule("../../src/utils/api.js", () => ({
   makeSejmRequest,
