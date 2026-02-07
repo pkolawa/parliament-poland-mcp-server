@@ -35,26 +35,12 @@ function extractTermNumbers(terms: unknown[]): number[] {
     }
   }
 
-  return results;
+  return results.sort((a, b) => b - a);
 }
 
 function extractTermNumber(terms: unknown[]): number | null {
-  for (const term of terms) {
-    if (!isObject(term)) {
-      continue;
-    }
-
-    const candidates = [term.num, term.number, term.term, term.kadencja];
-    for (const candidate of candidates) {
-      if (typeof candidate === "number" && Number.isInteger(candidate) && candidate > 0) {
-        return candidate;
-      }
-      if (typeof candidate === "string" && /^\d+$/.test(candidate)) {
-        return Number(candidate);
-      }
-    }
-  }
-  return null;
+  const numbers = extractTermNumbers(terms);
+  return numbers.length > 0 ? numbers[0] : null;
 }
 
 function extractProceedingNumbers(proceedings: unknown[]): number[] {
@@ -194,7 +180,7 @@ liveDescribe("Sejm API live integration", () => {
 
     const result = await findFirstTermWithResults(
       (terms as unknown[]) ?? [],
-      (termNumber) => `/term${termNumber}/sittings`,
+      (termNumber) => `/term${termNumber}/proceedings`,
       { limit: 1 }
     );
 
@@ -211,7 +197,7 @@ liveDescribe("Sejm API live integration", () => {
 
     const proceedingsResult = await findFirstTermWithResults(
       (terms as unknown[]) ?? [],
-      (termNumber) => `/term${termNumber}/sittings`,
+      (termNumber) => `/term${termNumber}/proceedings`,
       { limit: 5 }
     );
 

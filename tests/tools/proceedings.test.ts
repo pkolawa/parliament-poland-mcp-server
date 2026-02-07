@@ -24,7 +24,7 @@ describe("getProceedingsTool", () => {
 
     const result = await getProceedingsTool.handler({ term: 10, offset: 1, limit: 2 });
 
-    expect(makeSejmRequestMock).toHaveBeenCalledWith("/term10/sittings", {
+    expect(makeSejmRequestMock).toHaveBeenCalledWith("/term10/proceedings", {
       offset: 1,
       limit: 2,
     });
