@@ -1,6 +1,6 @@
 import { jest } from "@jest/globals";
 import { makeSejmRequest } from "../../src/utils/api.js";
-import { getMpTool, getMpsTool } from "../../src/tools/mps.js";
+import { getCommitteeTool, getCommitteesTool } from "../../src/tools/committees.js";
 
 type MakeSejmRequestFn = (
   endpoint: string,
@@ -18,51 +18,51 @@ beforeEach(() => {
   makeSejmRequestMock.mockReset();
 });
 
-describe("getMpsTool", () => {
+describe("getCommitteesTool", () => {
   it("returns a success message with data", async () => {
-    makeSejmRequestMock.mockResolvedValue([{ id: 1 }]);
+    makeSejmRequestMock.mockResolvedValue([{ id: "KFP" }]);
 
-    const result = await getMpsTool.handler({ term: 10, offset: 0, limit: 2 });
+    const result = await getCommitteesTool.handler({ term: 10, offset: 1, limit: 2 });
 
-    expect(makeSejmRequestMock).toHaveBeenCalledWith("/term10/MP", {
-      offset: 0,
+    expect(makeSejmRequestMock).toHaveBeenCalledWith("/term10/committees", {
+      offset: 1,
       limit: 2,
     });
     expect(result.content[0].text).toContain(
-      "Fetched the list of MPs for term 10:"
+      "Fetched the list of committees for term 10:"
     );
   });
 
   it("returns a failure message when the API fails", async () => {
     makeSejmRequestMock.mockResolvedValue(null);
 
-    const result = await getMpsTool.handler({ term: 10 });
+    const result = await getCommitteesTool.handler({ term: 10 });
 
     expect(result.content[0].text).toContain(
-      "Failed to fetch the list of MPs for term 10"
+      "Failed to fetch the list of committees for term 10."
     );
   });
 });
 
-describe("getMpTool", () => {
+describe("getCommitteeTool", () => {
   it("returns a success message with data", async () => {
-    makeSejmRequestMock.mockResolvedValue({ id: 1, name: "Test" });
+    makeSejmRequestMock.mockResolvedValue({ id: "KFP" });
 
-    const result = await getMpTool.handler({ term: 10, id: 1 });
+    const result = await getCommitteeTool.handler({ term: 10, id: "KFP" });
 
-    expect(makeSejmRequestMock).toHaveBeenCalledWith("/term10/MP/1");
+    expect(makeSejmRequestMock).toHaveBeenCalledWith("/term10/committees/KFP");
     expect(result.content[0].text).toContain(
-      "Fetched information about the MP with ID 1 in term 10:"
+      "Fetched details for committee KFP in term 10:"
     );
   });
 
   it("returns a failure message when the API fails", async () => {
     makeSejmRequestMock.mockResolvedValue(null);
 
-    const result = await getMpTool.handler({ term: 10, id: 1 });
+    const result = await getCommitteeTool.handler({ term: 10, id: "KFP" });
 
     expect(result.content[0].text).toContain(
-      "Failed to fetch information about the MP with ID 1 in term 10."
+      "Failed to fetch details for committee KFP in term 10."
     );
   });
 });

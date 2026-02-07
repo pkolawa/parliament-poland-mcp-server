@@ -1,6 +1,6 @@
 import { jest } from "@jest/globals";
 import { makeSejmRequest } from "../../src/utils/api.js";
-import { getTermsTool } from "../../src/tools/terms.js";
+import { getBilateralGroupsTool } from "../../src/tools/bilateralGroups.js";
 
 type MakeSejmRequestFn = (
   endpoint: string,
@@ -18,24 +18,25 @@ beforeEach(() => {
   makeSejmRequestMock.mockReset();
 });
 
-describe("getTermsTool", () => {
+describe("getBilateralGroupsTool", () => {
   it("returns a success message with data", async () => {
-    makeSejmRequestMock.mockResolvedValue([{ term: 10 }]);
+    makeSejmRequestMock.mockResolvedValue([{ id: 1 }]);
 
-    const result = await getTermsTool.handler({ offset: 1, limit: 2 });
+    const result = await getBilateralGroupsTool.handler();
 
-    expect(makeSejmRequestMock).toHaveBeenCalledWith("/term", {
-      offset: 1,
-      limit: 2,
-    });
-    expect(result.content[0].text).toContain("Fetched the list of Sejm terms:");
+    expect(makeSejmRequestMock).toHaveBeenCalledWith("/bilateralGroups");
+    expect(result.content[0].text).toContain(
+      "Fetched the list of bilateral groups:"
+    );
   });
 
   it("returns a failure message when the API fails", async () => {
     makeSejmRequestMock.mockResolvedValue(null);
 
-    const result = await getTermsTool.handler({});
+    const result = await getBilateralGroupsTool.handler();
 
-    expect(result.content[0].text).toContain("Failed to fetch the list of terms.");
+    expect(result.content[0].text).toContain(
+      "Failed to fetch the list of bilateral groups."
+    );
   });
 });

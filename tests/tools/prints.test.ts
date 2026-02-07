@@ -1,6 +1,6 @@
 import { jest } from "@jest/globals";
 import { makeSejmRequest } from "../../src/utils/api.js";
-import { getMpTool, getMpsTool } from "../../src/tools/mps.js";
+import { getPrintTool, getPrintsTool } from "../../src/tools/prints.js";
 
 type MakeSejmRequestFn = (
   endpoint: string,
@@ -18,51 +18,52 @@ beforeEach(() => {
   makeSejmRequestMock.mockReset();
 });
 
-describe("getMpsTool", () => {
+describe("getPrintsTool", () => {
   it("returns a success message with data", async () => {
-    makeSejmRequestMock.mockResolvedValue([{ id: 1 }]);
+    makeSejmRequestMock.mockResolvedValue([{ number: 123 }]);
 
-    const result = await getMpsTool.handler({ term: 10, offset: 0, limit: 2 });
+    const result = await getPrintsTool.handler({ term: 10, offset: 1, limit: 2, sort_by: "date" });
 
-    expect(makeSejmRequestMock).toHaveBeenCalledWith("/term10/MP", {
-      offset: 0,
+    expect(makeSejmRequestMock).toHaveBeenCalledWith("/term10/prints", {
+      offset: 1,
       limit: 2,
+      sort_by: "date",
     });
     expect(result.content[0].text).toContain(
-      "Fetched the list of MPs for term 10:"
+      "Fetched the list of prints for term 10:"
     );
   });
 
   it("returns a failure message when the API fails", async () => {
     makeSejmRequestMock.mockResolvedValue(null);
 
-    const result = await getMpsTool.handler({ term: 10 });
+    const result = await getPrintsTool.handler({ term: 10 });
 
     expect(result.content[0].text).toContain(
-      "Failed to fetch the list of MPs for term 10"
+      "Failed to fetch the list of prints for term 10."
     );
   });
 });
 
-describe("getMpTool", () => {
+describe("getPrintTool", () => {
   it("returns a success message with data", async () => {
-    makeSejmRequestMock.mockResolvedValue({ id: 1, name: "Test" });
+    makeSejmRequestMock.mockResolvedValue({ number: 123 });
 
-    const result = await getMpTool.handler({ term: 10, id: 1 });
+    const result = await getPrintTool.handler({ term: 10, printNumber: 123 });
 
-    expect(makeSejmRequestMock).toHaveBeenCalledWith("/term10/MP/1");
+    expect(makeSejmRequestMock).toHaveBeenCalledWith("/term10/prints/123");
     expect(result.content[0].text).toContain(
-      "Fetched information about the MP with ID 1 in term 10:"
+      "Fetched details for print 123 in term 10:"
     );
   });
 
   it("returns a failure message when the API fails", async () => {
     makeSejmRequestMock.mockResolvedValue(null);
 
-    const result = await getMpTool.handler({ term: 10, id: 1 });
+    const result = await getPrintTool.handler({ term: 10, printNumber: 123 });
 
     expect(result.content[0].text).toContain(
-      "Failed to fetch information about the MP with ID 1 in term 10."
+      "Failed to fetch details for print 123 in term 10."
     );
   });
 });

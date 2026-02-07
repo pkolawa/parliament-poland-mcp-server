@@ -1,6 +1,6 @@
 import { jest } from "@jest/globals";
 import { makeSejmRequest } from "../../src/utils/api.js";
-import { getTermsTool } from "../../src/tools/terms.js";
+import { getVotingsTool } from "../../src/tools/votings.js";
 
 type MakeSejmRequestFn = (
   endpoint: string,
@@ -18,24 +18,33 @@ beforeEach(() => {
   makeSejmRequestMock.mockReset();
 });
 
-describe("getTermsTool", () => {
+describe("getVotingsTool", () => {
   it("returns a success message with data", async () => {
-    makeSejmRequestMock.mockResolvedValue([{ term: 10 }]);
+    makeSejmRequestMock.mockResolvedValue([{ id: 1 }]);
 
-    const result = await getTermsTool.handler({ offset: 1, limit: 2 });
-
-    expect(makeSejmRequestMock).toHaveBeenCalledWith("/term", {
+    const result = await getVotingsTool.handler({
+      term: 10,
+      proceeding: 5,
       offset: 1,
       limit: 2,
     });
-    expect(result.content[0].text).toContain("Fetched the list of Sejm terms:");
+
+    expect(makeSejmRequestMock).toHaveBeenCalledWith(
+      "/term10/votings/5",
+      { offset: 1, limit: 2 }
+    );
+    expect(result.content[0].text).toContain(
+      "Fetched the list of votings for term 10:"
+    );
   });
 
   it("returns a failure message when the API fails", async () => {
     makeSejmRequestMock.mockResolvedValue(null);
 
-    const result = await getTermsTool.handler({});
+    const result = await getVotingsTool.handler({ term: 10, proceeding: 5 });
 
-    expect(result.content[0].text).toContain("Failed to fetch the list of terms.");
+    expect(result.content[0].text).toContain(
+      "Failed to fetch the list of votings for term 10."
+    );
   });
 });
