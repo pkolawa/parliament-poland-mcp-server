@@ -7,7 +7,7 @@
   "scripts": {
     "test": "jest",
     "test:live-api": "RUN_LIVE_API_TESTS=true jest --config jest.live.config.cjs --runInBand",
-    "build": "node build.mjs",
+    "build": "npm run test:unit && node build.mjs",
     "start": "node build/index.mjs"
   },
   "repository": {
