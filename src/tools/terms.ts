@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { makeSejmRequest } from "../utils/api.js";
+import type { Term } from "../types/api.js";
 
 export const getTermsTool = {
   description: "Get a list of Sejm terms",
@@ -9,7 +10,7 @@ export const getTermsTool = {
   },
   handler: async (args: { offset?: number, limit?: number }) => {
     const { offset, limit } = args;
-    const terms = await makeSejmRequest<any[]>("/term", { offset, limit });
+    const terms = await makeSejmRequest<Term[]>("/term", { offset, limit });
 
     if (!terms) {
       return {

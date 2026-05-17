@@ -1,11 +1,12 @@
 import { z } from "zod";
 import { makeSejmRequest } from "../utils/api.js";
+import type { BilateralGroup } from "../types/api.js";
 
 export const getBilateralGroupsTool = {
   description: "Get a list of bilateral groups in the Sejm",
   schema: {},
   handler: async () => {
-    const groups = await makeSejmRequest<any[]>("/bilateralGroups");
+    const groups = await makeSejmRequest<BilateralGroup[]>("/bilateralGroups");
 
     if (!groups) {
       return {

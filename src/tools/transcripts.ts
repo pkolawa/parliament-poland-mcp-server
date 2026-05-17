@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { makeSejmRequest } from "../utils/api.js";
+import type { Transcript } from "../types/api.js";
 
 export const getTranscriptsTool = {
   description: "Get a list of transcripts for a given term",
@@ -10,7 +11,7 @@ export const getTranscriptsTool = {
   },
   handler: async (args: { term: number, offset?: number, limit?: number }) => {
     const { term, offset, limit } = args;
-    const transcripts = await makeSejmRequest<any[]>(
+    const transcripts = await makeSejmRequest<Transcript[]>(
       `/term${term}/speeches`,
       { offset, limit },
     );

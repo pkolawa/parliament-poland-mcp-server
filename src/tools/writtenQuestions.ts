@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { makeSejmRequest } from "../utils/api.js";
+import type { WrittenQuestion } from "../types/api.js";
 
 export const getWrittenQuestionsTool = {
   description: "Get a list of written questions for a given term",
@@ -17,7 +18,7 @@ export const getWrittenQuestionsTool = {
   },
   handler: async (args: { term: number, offset?: number, limit?: number, sort_by?: string, title?: string, from?: string, to?: string, since?: string, till?: string, modifiedSince?: string }) => {
     const { term, offset, limit, sort_by, title, from, to, since, till, modifiedSince } = args;
-    const writtenQuestions = await makeSejmRequest<any[]>(
+    const writtenQuestions = await makeSejmRequest<WrittenQuestion[]>(
       `/term${term}/written-questions`,
       { offset, limit, sort_by, title, from, to, since, till, modifiedSince },
     );

@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { makeSejmRequest } from "../utils/api.js";
+import type { Proceeding } from "../types/api.js";
 
 export const getProceedingsTool = {
   description: "Get a list of proceedings for a given term",
@@ -10,7 +11,7 @@ export const getProceedingsTool = {
   },
   handler: async (args: { term: number, offset?: number, limit?: number }) => {
     const { term, offset, limit } = args;
-    const proceedings = await makeSejmRequest<any[]>(
+    const proceedings = await makeSejmRequest<Proceeding[]>(
       `/term${term}/proceedings`,
       { offset, limit },
     );

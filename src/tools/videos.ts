@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { makeSejmRequest } from "../utils/api.js";
+import type { Video } from "../types/api.js";
 
 export const getVideosTool = {
   description: "Get a list of video recordings for a given term",
@@ -10,7 +11,7 @@ export const getVideosTool = {
   },
   handler: async (args: { term: number, offset?: number, limit?: number }) => {
     const { term, offset, limit } = args;
-    const videos = await makeSejmRequest<any[]>(
+    const videos = await makeSejmRequest<Video[]>(
       `/term${term}/videos`,
       { offset, limit },
     );
