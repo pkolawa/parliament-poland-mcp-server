@@ -3,7 +3,7 @@ const SEJM_API_BASE = "https://api.sejm.gov.pl/sejm";
 
 export async function makeSejmRequest<T>(
   endpoint: string,
-  params?: Record<string, any>
+  params?: Record<string, string | number | boolean | undefined>
 ): Promise<T | null> {
   const url = new URL(`${SEJM_API_BASE}${endpoint}`);
   if (params) {

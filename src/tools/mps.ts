@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { makeSejmRequest } from "../utils/api.js";
+import type { Mp } from "../types/api.js";
 
 
 export const getMpTool = {
@@ -10,7 +11,7 @@ export const getMpTool = {
   },
   handler: async (args: { term: number; id: number }) => {
     const { term, id } = args;
-    const mp = await makeSejmRequest<any>(`/term${term}/MP/${id}`);
+    const mp = await makeSejmRequest<Mp>(`/term${term}/MP/${id}`);
 
     if (!mp) {
       return {
@@ -44,7 +45,7 @@ export const getMpsTool = {
   },
   handler: async (args: { term: number, offset?: number, limit?: number }) => {
     const { term, offset, limit } = args;
-    const mps = await makeSejmRequest<any[]>(
+    const mps = await makeSejmRequest<Mp[]>(
       `/term${term}/MP`,
       { offset, limit },
     );

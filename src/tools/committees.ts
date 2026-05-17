@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { makeSejmRequest } from "../utils/api.js";
+import type { Committee } from "../types/api.js";
 
 export const getCommitteesTool = {
   description: "Get a list of committees for a given term",
@@ -10,7 +11,7 @@ export const getCommitteesTool = {
   },
   handler: async (args: { term: number, offset?: number, limit?: number }) => {
     const { term, offset, limit } = args;
-    const committees = await makeSejmRequest<any[]>(
+    const committees = await makeSejmRequest<Committee[]>(
       `/term${term}/committees`,
       { offset, limit },
     );
@@ -45,7 +46,7 @@ export const getCommitteeTool = {
   },
   handler: async (args: { term: number; id: string }) => {
     const { term, id } = args;
-    const committee = await makeSejmRequest<any>(
+    const committee = await makeSejmRequest<Committee>(
       `/term${term}/committees/${id}`
     );
 

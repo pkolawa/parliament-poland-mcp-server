@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { makeSejmRequest } from "../utils/api.js";
+import type { Voting } from "../types/api.js";
 
 export const getVotingsTool = {
   description: "Get a list of votings for a given term",
@@ -11,7 +12,7 @@ export const getVotingsTool = {
   },
   handler: async (args: { term: number, proceeding: number, offset?: number, limit?: number }) => {
     const { term, proceeding, offset, limit } = args;
-    const votings = await makeSejmRequest<any[]>(
+    const votings = await makeSejmRequest<Voting[]>(
       `/term${term}/votings/${proceeding}`,
       { offset, limit },
     );
