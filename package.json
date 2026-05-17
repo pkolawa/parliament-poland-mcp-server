@@ -1,14 +1,15 @@
 {
   "mcpName": "io.github.pkolawa/parliament-poland-mcp-server",
   "name": "parliament-poland-mcp-server",
-  "version": "1.2.2",
+  "version": "1.2.3",
   "description": "The MCP server for Parliament of Poland public API",
   "main": "./build/index.mjs",
   "scripts": {
     "test": "jest",
     "test:live-api": "RUN_LIVE_API_TESTS=true jest --config jest.live.config.cjs --runInBand",
     "build": "npm run test && node build.mjs",
-    "start": "node build/index.mjs"
+    "start": "node build/index.mjs",
+    "version": "node scripts/sync-version.mjs && git add src/server.ts server.json"
   },
   "repository": {
     "type": "git",
