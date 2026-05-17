@@ -7,7 +7,7 @@
 **Parliament Poland MCP Server** — serwer MCP (Model Context Protocol) udostępniający publiczne API Sejmu RP jako narzędzia dla modeli językowych (LLM).
 
 - **Typ:** MCP Server (stdio transport)
-- **Wersja:** 1.2.2
+- **Wersja:** 1.2.3
 - **Język:** TypeScript (ESM)
 - **Framework:** @modelcontextprotocol/sdk v1.18
 - **Walidacja:** Zod v3.25
