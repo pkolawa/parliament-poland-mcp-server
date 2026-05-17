@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { makeSejmRequest } from "../utils/api.js";
+import type { Club } from "../types/api.js";
 
 export const getClubsTool = {
   description: "Get a list of clubs for a given term",
@@ -10,7 +11,7 @@ export const getClubsTool = {
   },
   handler: async (args: { term: number, offset?: number, limit?: number }) => {
     const { term, offset, limit } = args;
-    const clubs = await makeSejmRequest<any[]>(
+    const clubs = await makeSejmRequest<Club[]>(
       `/term${term}/clubs`,
       { offset, limit },
     );
@@ -45,7 +46,7 @@ export const getClubTool = {
   },
   handler: async (args: { term: number; id: string }) => {
     const { term, id } = args;
-    const club = await makeSejmRequest<any>(
+    const club = await makeSejmRequest<Club>(
       `/term${term}/clubs/${id}`
     );
 

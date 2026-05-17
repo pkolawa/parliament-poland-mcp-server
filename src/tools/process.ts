@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { makeSejmRequest } from "../utils/api.js";
+import type { LegislativeProcess } from "../types/api.js";
 
 export const getProcessTool = {
   description: "Get information about a specific legislative process",
@@ -10,7 +11,7 @@ export const getProcessTool = {
   },
   handler: async (args: { term: number; processNumber: number }) => {
     const { term, processNumber } = args;
-    const process = await makeSejmRequest<any>(
+    const process = await makeSejmRequest<LegislativeProcess>(
       `/term${term}/process/${processNumber}`
     );
 

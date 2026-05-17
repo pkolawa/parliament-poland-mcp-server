@@ -14,7 +14,7 @@ for (const [name, tool] of Object.entries(tools)) {
         description: tool.description,
         inputSchema: tool.schema
     },
-    (params: any) => tool.handler(params)
+    (params: Record<string, unknown>) => tool.handler(params as never)
   );
 }
 

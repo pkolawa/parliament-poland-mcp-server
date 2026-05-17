@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { makeSejmRequest } from "../utils/api.js";
+import type { Interpellation } from "../types/api.js";
 
 export const getInterpellationsTool = {
   description: "Get a list of interpellations for a given term",
@@ -18,7 +19,7 @@ export const getInterpellationsTool = {
   },
   handler: async (args: { term: number, offset?: number, limit?: number, dateFrom?: string, dateTo?: string, title?: string, number?: number, mp?: number, club?: string, status?: string, sort_by?: string }) => {
     const { term, offset, limit, dateFrom, dateTo, title, number, mp, club, status, sort_by } = args;
-    const interpellations = await makeSejmRequest<any[]>(
+    const interpellations = await makeSejmRequest<Interpellation[]>(
       `/term${term}/interpellations`,
       { offset, limit, dateFrom, dateTo, title, number, mp, club, status, sort_by },
     );
@@ -53,7 +54,7 @@ export const getInterpellationTool = {
   },
   handler: async (args: { term: number; id: number }) => {
     const { term, id } = args;
-    const interpellation = await makeSejmRequest<any>(
+    const interpellation = await makeSejmRequest<Interpellation>(
       `/term${term}/interpellations/${id}`
     );
 

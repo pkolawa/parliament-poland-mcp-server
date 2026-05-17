@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { makeSejmRequest } from "../utils/api.js";
+import type { Print } from "../types/api.js";
 
 export const getPrintsTool = {
   description: "Get a list of prints for a given term",
@@ -11,7 +12,7 @@ export const getPrintsTool = {
   },
   handler: async (args: { term: number, offset?: number, limit?: number, sort_by?: string }) => {
     const { term, offset, limit, sort_by } = args;
-    const prints = await makeSejmRequest<any[]>(
+    const prints = await makeSejmRequest<Print[]>(
       `/term${term}/prints`,
       { offset, limit, sort_by },
     );
@@ -46,7 +47,7 @@ export const getPrintTool = {
   },
   handler: async (args: { term: number; printNumber: number }) => {
     const { term, printNumber } = args;
-    const print = await makeSejmRequest<any>(
+    const print = await makeSejmRequest<Print>(
       `/term${term}/prints/${printNumber}`
     );
 
