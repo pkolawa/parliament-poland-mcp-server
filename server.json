@@ -6,13 +6,13 @@
   "repository": {
     "url": "https://github.com/pkolawa/parliament-poland-mcp-server"
   },
-  "version": "1.3.2",
+  "version": "1.3.3",
   "packages": [
     {
       "registryType": "npm",
       "registryBaseUrl": "https://registry.npmjs.org",
       "identifier": "parliament-poland-mcp-server",
-      "version": "1.3.2",
+      "version": "1.3.3",
       "transport": {
         "type": "stdio"
       }
