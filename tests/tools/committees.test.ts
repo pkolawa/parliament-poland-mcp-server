@@ -20,7 +20,7 @@ beforeEach(() => {
 
 describe("getCommitteesTool", () => {
   it("returns a success message with data", async () => {
-    makeSejmRequestMock.mockResolvedValue([{ id: "KFP" }]);
+    makeSejmRequestMock.mockResolvedValue({ ok: true, data: [{ id: "KFP" }] });
 
     const result = await getCommitteesTool.handler({ term: 10, offset: 1, limit: 2 });
 
@@ -34,19 +34,24 @@ describe("getCommitteesTool", () => {
   });
 
   it("returns a failure message when the API fails", async () => {
-    makeSejmRequestMock.mockResolvedValue(null);
+    makeSejmRequestMock.mockResolvedValue({
+      ok: false,
+      error: { status: 404, message: "HTTP 404 Not Found for /sejm/test" },
+    });
 
     const result = await getCommitteesTool.handler({ term: 10 });
 
     expect(result.content[0].text).toContain(
       "Failed to fetch the list of committees for term 10."
     );
+    expect(result.content[0].text).toContain("Error: HTTP 404 Not Found");
+    expect(result.isError).toBe(true);
   });
 });
 
 describe("getCommitteeTool", () => {
   it("returns a success message with data", async () => {
-    makeSejmRequestMock.mockResolvedValue({ id: "KFP" });
+    makeSejmRequestMock.mockResolvedValue({ ok: true, data: { id: "KFP" } });
 
     const result = await getCommitteeTool.handler({ term: 10, id: "KFP" });
 
@@ -57,12 +62,17 @@ describe("getCommitteeTool", () => {
   });
 
   it("returns a failure message when the API fails", async () => {
-    makeSejmRequestMock.mockResolvedValue(null);
+    makeSejmRequestMock.mockResolvedValue({
+      ok: false,
+      error: { status: 404, message: "HTTP 404 Not Found for /sejm/test" },
+    });
 
     const result = await getCommitteeTool.handler({ term: 10, id: "KFP" });
 
     expect(result.content[0].text).toContain(
       "Failed to fetch details for committee KFP in term 10."
     );
+    expect(result.content[0].text).toContain("Error: HTTP 404 Not Found");
+    expect(result.isError).toBe(true);
   });
 });

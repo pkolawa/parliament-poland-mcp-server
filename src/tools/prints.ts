@@ -17,14 +17,15 @@ export const getPrintsTool = {
       { offset, limit, sort_by },
     );
 
-    if (!prints) {
+    if (!prints.ok) {
       return {
         content: [
           {
             type: "text" as const,
-            text: `Failed to fetch the list of prints for term ${term}.`,
+            text: `Failed to fetch the list of prints for term ${term}.\n\nError: ${prints.error.message}`,
           },
         ],
+        isError: true,
       };
     }
 
@@ -32,7 +33,7 @@ export const getPrintsTool = {
       content: [
         {
           type: "text" as const,
-          text: `Fetched the list of prints for term ${term}:\n\n${JSON.stringify(prints, null, 2)}`,
+          text: `Fetched the list of prints for term ${term}:\n\n${JSON.stringify(prints.data, null, 2)}`,
         },
       ],
     };
@@ -51,14 +52,15 @@ export const getPrintTool = {
       `/term${term}/prints/${printNumber}`
     );
 
-    if (!print) {
+    if (!print.ok) {
       return {
         content: [
           {
             type: "text" as const,
-            text: `Failed to fetch details for print ${printNumber} in term ${term}.`,
+            text: `Failed to fetch details for print ${printNumber} in term ${term}.\n\nError: ${print.error.message}`,
           },
         ],
+        isError: true,
       };
     }
 
@@ -66,7 +68,7 @@ export const getPrintTool = {
       content: [
         {
           type: "text" as const,
-          text: `Fetched details for print ${printNumber} in term ${term}:\n\n${JSON.stringify(print, null, 2)}`,
+          text: `Fetched details for print ${printNumber} in term ${term}:\n\n${JSON.stringify(print.data, null, 2)}`,
         },
       ],
     };

@@ -16,14 +16,15 @@ export const getTranscriptsTool = {
       { offset, limit },
     );
 
-    if (!transcripts) {
+    if (!transcripts.ok) {
       return {
         content: [
           {
             type: "text" as const,
-            text: `Failed to fetch the list of transcripts for term ${term}.`,
+            text: `Failed to fetch the list of transcripts for term ${term}.\n\nError: ${transcripts.error.message}`,
           },
         ],
+        isError: true,
       };
     }
 
@@ -31,7 +32,7 @@ export const getTranscriptsTool = {
       content: [
         {
           type: "text" as const,
-          text: `Fetched the list of transcripts for term ${term}:\n\n${JSON.stringify(transcripts, null, 2)}`,
+          text: `Fetched the list of transcripts for term ${term}:\n\n${JSON.stringify(transcripts.data, null, 2)}`,
         },
       ],
     };

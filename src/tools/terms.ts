@@ -12,14 +12,15 @@ export const getTermsTool = {
     const { offset, limit } = args;
     const terms = await makeSejmRequest<Term[]>("/term", { offset, limit });
 
-    if (!terms) {
+    if (!terms.ok) {
       return {
         content: [
           {
             type: "text" as const,
-            text: "Failed to fetch the list of terms.",
+            text: `Failed to fetch the list of terms.\n\nError: ${terms.error.message}`,
           },
         ],
+        isError: true,
       };
     }
 
@@ -27,7 +28,7 @@ export const getTermsTool = {
       content: [
         {
           type: "text" as const,
-          text: `Fetched the list of Sejm terms:\n\n${JSON.stringify(terms, null, 2)}`,
+          text: `Fetched the list of Sejm terms:\n\n${JSON.stringify(terms.data, null, 2)}`,
         },
       ],
     };

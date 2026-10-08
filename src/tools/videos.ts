@@ -16,14 +16,15 @@ export const getVideosTool = {
       { offset, limit },
     );
 
-    if (!videos) {
+    if (!videos.ok) {
       return {
         content: [
           {
             type: "text" as const,
-            text: `Failed to fetch the list of video recordings for term ${term}.`,
+            text: `Failed to fetch the list of video recordings for term ${term}.\n\nError: ${videos.error.message}`,
           },
         ],
+        isError: true,
       };
     }
 
@@ -31,7 +32,7 @@ export const getVideosTool = {
       content: [
         {
           type: "text" as const,
-          text: `Fetched the list of video recordings for term ${term}:\n\n${JSON.stringify(videos, null, 2)}`,
+          text: `Fetched the list of video recordings for term ${term}:\n\n${JSON.stringify(videos.data, null, 2)}`,
         },
       ],
     };

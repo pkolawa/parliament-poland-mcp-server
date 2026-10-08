@@ -17,14 +17,15 @@ export const getVotingsTool = {
       { offset, limit },
     );
 
-    if (!votings) {
+    if (!votings.ok) {
       return {
         content: [
           {
             type: "text" as const,
-            text: `Failed to fetch the list of votings for term ${term}.`,
+            text: `Failed to fetch the list of votings for term ${term}.\n\nError: ${votings.error.message}`,
           },
         ],
+        isError: true,
       };
     }
 
@@ -32,7 +33,7 @@ export const getVotingsTool = {
       content: [
         {
           type: "text" as const,
-          text: `Fetched the list of votings for term ${term}:\n\n${JSON.stringify(votings, null, 2)}`,
+          text: `Fetched the list of votings for term ${term}:\n\n${JSON.stringify(votings.data, null, 2)}`,
         },
       ],
     };

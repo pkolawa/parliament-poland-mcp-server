@@ -8,14 +8,15 @@ export const getBilateralGroupsTool = {
   handler: async () => {
     const groups = await makeSejmRequest<BilateralGroup[]>("/bilateralGroups");
 
-    if (!groups) {
+    if (!groups.ok) {
       return {
         content: [
           {
             type: "text" as const,
-            text: "Failed to fetch the list of bilateral groups.",
+            text: `Failed to fetch the list of bilateral groups.\n\nError: ${groups.error.message}`,
           },
         ],
+        isError: true,
       };
     }
 
@@ -24,7 +25,7 @@ export const getBilateralGroupsTool = {
         {
           type: "text" as const,
           text: `Fetched the list of bilateral groups:\n\n${JSON.stringify(
-            groups,
+            groups.data,
             null,
             2
           )}`,

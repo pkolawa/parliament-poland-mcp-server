@@ -15,14 +15,15 @@ export const getProcessTool = {
       `/term${term}/process/${processNumber}`
     );
 
-    if (!process) {
+    if (!process.ok) {
       return {
         content: [
           {
             type: "text" as const,
-            text: `Failed to fetch process ${processNumber} for term ${term}.`,
+            text: `Failed to fetch process ${processNumber} for term ${term}.\n\nError: ${process.error.message}`,
           },
         ],
+        isError: true,
       };
     }
 
@@ -31,7 +32,7 @@ export const getProcessTool = {
         {
           type: "text" as const,
           text: `Fetched process ${processNumber} for term ${term}:\n\n${JSON.stringify(
-            process,
+            process.data,
             null,
             2
           )}`,
