@@ -16,14 +16,15 @@ export const getProceedingsTool = {
       { offset, limit },
     );
 
-    if (!proceedings) {
+    if (!proceedings.ok) {
       return {
         content: [
           {
             type: "text" as const,
-            text: `Failed to fetch the list of proceedings for term ${term}.`,
+            text: `Failed to fetch the list of proceedings for term ${term}.\n\nError: ${proceedings.error.message}`,
           },
         ],
+        isError: true,
       };
     }
 
@@ -31,7 +32,7 @@ export const getProceedingsTool = {
       content: [
         {
           type: "text" as const,
-          text: `Fetched the list of proceedings for term ${term}:\n\n${JSON.stringify(proceedings, null, 2)}`,
+          text: `Fetched the list of proceedings for term ${term}:\n\n${JSON.stringify(proceedings.data, null, 2)}`,
         },
       ],
     };

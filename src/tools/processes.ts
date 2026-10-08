@@ -16,14 +16,15 @@ export const getProcessesTool = {
       { offset, limit },
     );
 
-    if (!processes) {
+    if (!processes.ok) {
       return {
         content: [
           {
             type: "text" as const,
-            text: `Failed to fetch the list of processes for term ${term}`,
+            text: `Failed to fetch the list of processes for term ${term}\n\nError: ${processes.error.message}`,
           },
         ],
+        isError: true,
       };
     }
 
@@ -31,7 +32,7 @@ export const getProcessesTool = {
       content: [
         {
           type: "text" as const,
-          text: `Fetched the list of processes for term ${term}:\n\n${JSON.stringify(processes, null, 2)}`,
+          text: `Fetched the list of processes for term ${term}:\n\n${JSON.stringify(processes.data, null, 2)}`,
         },
       ],
     };

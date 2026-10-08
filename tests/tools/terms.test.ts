@@ -20,7 +20,7 @@ beforeEach(() => {
 
 describe("getTermsTool", () => {
   it("returns a success message with data", async () => {
-    makeSejmRequestMock.mockResolvedValue([{ term: 10 }]);
+    makeSejmRequestMock.mockResolvedValue({ ok: true, data: [{ term: 10 }] });
 
     const result = await getTermsTool.handler({ offset: 1, limit: 2 });
 
@@ -32,10 +32,15 @@ describe("getTermsTool", () => {
   });
 
   it("returns a failure message when the API fails", async () => {
-    makeSejmRequestMock.mockResolvedValue(null);
+    makeSejmRequestMock.mockResolvedValue({
+      ok: false,
+      error: { status: 404, message: "HTTP 404 Not Found for /sejm/test" },
+    });
 
     const result = await getTermsTool.handler({});
 
     expect(result.content[0].text).toContain("Failed to fetch the list of terms.");
+    expect(result.content[0].text).toContain("Error: HTTP 404 Not Found");
+    expect(result.isError).toBe(true);
   });
 });

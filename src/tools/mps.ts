@@ -13,14 +13,15 @@ export const getMpTool = {
     const { term, id } = args;
     const mp = await makeSejmRequest<Mp>(`/term${term}/MP/${id}`);
 
-    if (!mp) {
+    if (!mp.ok) {
       return {
         content: [
           {
             type: "text" as const,
-            text: `Failed to fetch information about the MP with ID ${id} in term ${term}.`,
+            text: `Failed to fetch information about the MP with ID ${id} in term ${term}.\n\nError: ${mp.error.message}`,
           },
         ],
+        isError: true,
       };
     }
 
@@ -28,7 +29,7 @@ export const getMpTool = {
       content: [
         {
           type: "text" as const,
-          text: `Fetched information about the MP with ID ${id} in term ${term}:\n\n${JSON.stringify(mp, null, 2)}`,
+          text: `Fetched information about the MP with ID ${id} in term ${term}:\n\n${JSON.stringify(mp.data, null, 2)}`,
         },
       ],
     };
@@ -50,14 +51,15 @@ export const getMpsTool = {
       { offset, limit },
     );
 
-    if (!mps) {
+    if (!mps.ok) {
       return {
         content: [
           {
             type: "text" as const,
-            text: `Failed to fetch the list of MPs for term ${term}`,
+            text: `Failed to fetch the list of MPs for term ${term}\n\nError: ${mps.error.message}`,
           },
         ],
+        isError: true,
       };
     }
 
@@ -65,7 +67,7 @@ export const getMpsTool = {
       content: [
         {
           type: "text" as const,
-          text: `Fetched the list of MPs for term ${term}:\n\n${JSON.stringify(mps, null, 2)}`,
+          text: `Fetched the list of MPs for term ${term}:\n\n${JSON.stringify(mps.data, null, 2)}`,
         },
       ],
     };

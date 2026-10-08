@@ -6,6 +6,14 @@ import { getTermsTool } from "../../src/tools/terms.js";
 const runLiveApiTests = process.env.RUN_LIVE_API_TESTS === "true";
 const liveDescribe = runLiveApiTests ? describe : describe.skip;
 
+async function fetchData(
+  endpoint: string,
+  params?: Record<string, string | number | boolean | undefined>
+): Promise<unknown> {
+  const result = await makeSejmRequest<unknown>(endpoint, params);
+  return result.ok ? result.data : null;
+}
+
 function isObject(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
 }
@@ -80,14 +88,14 @@ function extractProceedingNumbers(proceedings: unknown[]): number[] {
 async function findFirstTermWithResults(
   terms: unknown[],
   endpoint: (term: number) => string,
-  params: Record<string, unknown>,
+  params: Record<string, string | number | boolean | undefined>,
   maxTerms = 5
 ): Promise<{ term: number; results: unknown[] } | null> {
   const termNumbers = extractTermNumbers(terms);
   const candidates = termNumbers.slice(0, maxTerms);
 
   for (const term of candidates) {
-    const result = await makeSejmRequest<unknown>(endpoint(term), params);
+    const result = await fetchData(endpoint(term), params);
     if (Array.isArray(result) && result.length > 0) {
       return { term, results: result as unknown[] };
     }
@@ -100,14 +108,14 @@ liveDescribe("Sejm API live integration", () => {
   jest.setTimeout(30_000);
 
   it("returns a non-empty list of terms", async () => {
-    const terms = await makeSejmRequest<unknown>("/term");
+    const terms = await fetchData("/term");
 
     expect(Array.isArray(terms)).toBe(true);
     expect((terms as unknown[]).length).toBeGreaterThan(0);
   });
 
   it("returns MPs for an existing term", async () => {
-    const terms = await makeSejmRequest<unknown>("/term");
+    const terms = await fetchData("/term");
     expect(Array.isArray(terms)).toBe(true);
 
     const result = await findFirstTermWithResults(
@@ -124,7 +132,7 @@ liveDescribe("Sejm API live integration", () => {
   });
 
   it("returns committees for an existing term", async () => {
-    const terms = await makeSejmRequest<unknown>("/term");
+    const terms = await fetchData("/term");
     expect(Array.isArray(terms)).toBe(true);
 
     const result = await findFirstTermWithResults(
@@ -141,7 +149,7 @@ liveDescribe("Sejm API live integration", () => {
   });
 
   it("returns clubs for an existing term", async () => {
-    const terms = await makeSejmRequest<unknown>("/term");
+    const terms = await fetchData("/term");
     expect(Array.isArray(terms)).toBe(true);
 
     const result = await findFirstTermWithResults(
@@ -158,7 +166,7 @@ liveDescribe("Sejm API live integration", () => {
   });
 
   it("returns prints for an existing term", async () => {
-    const terms = await makeSejmRequest<unknown>("/term");
+    const terms = await fetchData("/term");
     expect(Array.isArray(terms)).toBe(true);
 
     const result = await findFirstTermWithResults(
@@ -175,7 +183,7 @@ liveDescribe("Sejm API live integration", () => {
   });
 
   it("returns proceedings for an existing term", async () => {
-    const terms = await makeSejmRequest<unknown>("/term");
+    const terms = await fetchData("/term");
     expect(Array.isArray(terms)).toBe(true);
 
     const result = await findFirstTermWithResults(
@@ -192,7 +200,7 @@ liveDescribe("Sejm API live integration", () => {
   });
 
   it("returns votings for an existing proceeding", async () => {
-    const terms = await makeSejmRequest<unknown>("/term");
+    const terms = await fetchData("/term");
     expect(Array.isArray(terms)).toBe(true);
 
     const proceedingsResult = await findFirstTermWithResults(
@@ -213,7 +221,7 @@ liveDescribe("Sejm API live integration", () => {
 
     let votings: unknown[] | null = null;
     for (const proceedingNumber of proceedingNumbers.slice(0, 5)) {
-      const result = await makeSejmRequest<unknown>(
+      const result = await fetchData(
         `/term${proceedingsResult.term}/votings/${proceedingNumber}`,
         { limit: 1 }
       );
@@ -236,7 +244,7 @@ liveDescribe("Sejm API live integration", () => {
   });
 
   it("MPs MCP tool returns success text for live API", async () => {
-    const terms = await makeSejmRequest<unknown>("/term");
+    const terms = await fetchData("/term");
     expect(Array.isArray(terms)).toBe(true);
 
     const termNumber = extractTermNumber((terms as unknown[]) ?? []);

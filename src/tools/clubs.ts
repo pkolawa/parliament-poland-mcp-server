@@ -16,14 +16,15 @@ export const getClubsTool = {
       { offset, limit },
     );
 
-    if (!clubs) {
+    if (!clubs.ok) {
       return {
         content: [
           {
             type: "text" as const,
-            text: `Failed to fetch the list of clubs for term ${term}.`,
+            text: `Failed to fetch the list of clubs for term ${term}.\n\nError: ${clubs.error.message}`,
           },
         ],
+        isError: true,
       };
     }
 
@@ -31,7 +32,7 @@ export const getClubsTool = {
       content: [
         {
           type: "text" as const,
-          text: `Fetched the list of clubs for term ${term}:\n\n${JSON.stringify(clubs, null, 2)}`,
+          text: `Fetched the list of clubs for term ${term}:\n\n${JSON.stringify(clubs.data, null, 2)}`,
         },
       ],
     };
@@ -50,14 +51,15 @@ export const getClubTool = {
       `/term${term}/clubs/${id}`
     );
 
-    if (!club) {
+    if (!club.ok) {
       return {
         content: [
           {
             type: "text" as const,
-            text: `Failed to fetch details for club ${id} in term ${term}.`,
+            text: `Failed to fetch details for club ${id} in term ${term}.\n\nError: ${club.error.message}`,
           },
         ],
+        isError: true,
       };
     }
 
@@ -65,7 +67,7 @@ export const getClubTool = {
       content: [
         {
           type: "text" as const,
-          text: `Fetched details for club ${id} in term ${term}:\n\n${JSON.stringify(club, null, 2)}`,
+          text: `Fetched details for club ${id} in term ${term}:\n\n${JSON.stringify(club.data, null, 2)}`,
         },
       ],
     };

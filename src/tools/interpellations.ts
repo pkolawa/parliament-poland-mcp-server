@@ -24,14 +24,15 @@ export const getInterpellationsTool = {
       { offset, limit, dateFrom, dateTo, title, number, mp, club, status, sort_by },
     );
 
-    if (!interpellations) {
+    if (!interpellations.ok) {
       return {
         content: [
           {
             type: "text" as const,
-            text: `Failed to fetch the list of interpellations for term ${term}.`,
+            text: `Failed to fetch the list of interpellations for term ${term}.\n\nError: ${interpellations.error.message}`,
           },
         ],
+        isError: true,
       };
     }
 
@@ -39,7 +40,7 @@ export const getInterpellationsTool = {
       content: [
         {
           type: "text" as const,
-          text: `Fetched the list of interpellations for term ${term}:\n\n${JSON.stringify(interpellations, null, 2)}`,
+          text: `Fetched the list of interpellations for term ${term}:\n\n${JSON.stringify(interpellations.data, null, 2)}`,
         },
       ],
     };
@@ -58,14 +59,15 @@ export const getInterpellationTool = {
       `/term${term}/interpellations/${id}`
     );
 
-    if (!interpellation) {
+    if (!interpellation.ok) {
       return {
         content: [
           {
             type: "text" as const,
-            text: `Failed to fetch details for interpellation ${id} in term ${term}.`,
+            text: `Failed to fetch details for interpellation ${id} in term ${term}.\n\nError: ${interpellation.error.message}`,
           },
         ],
+        isError: true,
       };
     }
 
@@ -73,7 +75,7 @@ export const getInterpellationTool = {
       content: [
         {
           type: "text" as const,
-          text: `Fetched details for interpellation ${id} in term ${term}:\n\n${JSON.stringify(interpellation, null, 2)}`,
+          text: `Fetched details for interpellation ${id} in term ${term}:\n\n${JSON.stringify(interpellation.data, null, 2)}`,
         },
       ],
     };

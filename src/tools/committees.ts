@@ -16,14 +16,15 @@ export const getCommitteesTool = {
       { offset, limit },
     );
 
-    if (!committees) {
+    if (!committees.ok) {
       return {
         content: [
           {
             type: "text" as const,
-            text: `Failed to fetch the list of committees for term ${term}.`,
+            text: `Failed to fetch the list of committees for term ${term}.\n\nError: ${committees.error.message}`,
           },
         ],
+        isError: true,
       };
     }
 
@@ -31,7 +32,7 @@ export const getCommitteesTool = {
       content: [
         {
           type: "text" as const,
-          text: `Fetched the list of committees for term ${term}:\n\n${JSON.stringify(committees, null, 2)}`,
+          text: `Fetched the list of committees for term ${term}:\n\n${JSON.stringify(committees.data, null, 2)}`,
         },
       ],
     };
@@ -50,14 +51,15 @@ export const getCommitteeTool = {
       `/term${term}/committees/${id}`
     );
 
-    if (!committee) {
+    if (!committee.ok) {
       return {
         content: [
           {
             type: "text" as const,
-            text: `Failed to fetch details for committee ${id} in term ${term}.`,
+            text: `Failed to fetch details for committee ${id} in term ${term}.\n\nError: ${committee.error.message}`,
           },
         ],
+        isError: true,
       };
     }
 
@@ -65,7 +67,7 @@ export const getCommitteeTool = {
       content: [
         {
           type: "text" as const,
-          text: `Fetched details for committee ${id} in term ${term}:\n\n${JSON.stringify(committee, null, 2)}`,
+          text: `Fetched details for committee ${id} in term ${term}:\n\n${JSON.stringify(committee.data, null, 2)}`,
         },
       ],
     };

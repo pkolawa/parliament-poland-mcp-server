@@ -20,7 +20,7 @@ beforeEach(() => {
 
 describe("getInterpellationsTool", () => {
   it("returns a success message with data", async () => {
-    makeSejmRequestMock.mockResolvedValue([{ id: 12 }]);
+    makeSejmRequestMock.mockResolvedValue({ ok: true, data: [{ id: 12 }] });
 
     const result = await getInterpellationsTool.handler({
       term: 10,
@@ -57,19 +57,24 @@ describe("getInterpellationsTool", () => {
   });
 
   it("returns a failure message when the API fails", async () => {
-    makeSejmRequestMock.mockResolvedValue(null);
+    makeSejmRequestMock.mockResolvedValue({
+      ok: false,
+      error: { status: 404, message: "HTTP 404 Not Found for /sejm/test" },
+    });
 
     const result = await getInterpellationsTool.handler({ term: 10 });
 
     expect(result.content[0].text).toContain(
       "Failed to fetch the list of interpellations for term 10."
     );
+    expect(result.content[0].text).toContain("Error: HTTP 404 Not Found");
+    expect(result.isError).toBe(true);
   });
 });
 
 describe("getInterpellationTool", () => {
   it("returns a success message with data", async () => {
-    makeSejmRequestMock.mockResolvedValue({ id: 12 });
+    makeSejmRequestMock.mockResolvedValue({ ok: true, data: { id: 12 } });
 
     const result = await getInterpellationTool.handler({ term: 10, id: 12 });
 
@@ -82,12 +87,17 @@ describe("getInterpellationTool", () => {
   });
 
   it("returns a failure message when the API fails", async () => {
-    makeSejmRequestMock.mockResolvedValue(null);
+    makeSejmRequestMock.mockResolvedValue({
+      ok: false,
+      error: { status: 404, message: "HTTP 404 Not Found for /sejm/test" },
+    });
 
     const result = await getInterpellationTool.handler({ term: 10, id: 12 });
 
     expect(result.content[0].text).toContain(
       "Failed to fetch details for interpellation 12 in term 10."
     );
+    expect(result.content[0].text).toContain("Error: HTTP 404 Not Found");
+    expect(result.isError).toBe(true);
   });
 });

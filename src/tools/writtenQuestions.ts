@@ -23,14 +23,15 @@ export const getWrittenQuestionsTool = {
       { offset, limit, sort_by, title, from, to, since, till, modifiedSince },
     );
 
-    if (!writtenQuestions) {
+    if (!writtenQuestions.ok) {
       return {
         content: [
           {
             type: "text" as const,
-            text: `Failed to fetch the list of written questions for term ${term}.`,
+            text: `Failed to fetch the list of written questions for term ${term}.\n\nError: ${writtenQuestions.error.message}`,
           },
         ],
+        isError: true,
       };
     }
 
@@ -38,7 +39,7 @@ export const getWrittenQuestionsTool = {
       content: [
         {
           type: "text" as const,
-          text: `Fetched the list of written questions for term ${term}:\n\n${JSON.stringify(writtenQuestions, null, 2)}`,
+          text: `Fetched the list of written questions for term ${term}:\n\n${JSON.stringify(writtenQuestions.data, null, 2)}`,
         },
       ],
     };
