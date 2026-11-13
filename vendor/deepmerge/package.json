@@ -1,0 +1,9 @@
+{
+  "name": "parliament-poland-mcp-deepmerge-patched",
+  "version": "4.3.1",
+  "description": "deepmerge 4.3.1 with the fix for GHSA-gcqx-w48m-w2h4 (prototype poisoning); see README.md",
+  "private": true,
+  "license": "MIT",
+  "main": "dist/cjs.js",
+  "types": "index.d.ts"
+}
