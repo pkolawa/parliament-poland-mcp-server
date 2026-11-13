@@ -3,32 +3,42 @@ name: tests
 on:
   pull_request:
 
+permissions:
+  contents: read
+
 jobs:
   jest:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # Every Node.js LTS line still in support; the oldest one is the `engines` floor.
+        node: [22, 24, 26]
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
-          node-version: 20
+          node-version: ${{ matrix.node }}
           cache: npm
       - name: Install dependencies
         run: npm ci
-      - name: Run tests
-        run: npm test
+      - name: Run tests and build
+        run: npm run build
+      - name: Smoke test the built server
+        run: npm run test:smoke
 
   live-api:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
-          node-version: 20
+          node-version-file: .nvmrc
           cache: npm
       - name: Install dependencies
         run: npm ci

@@ -6,7 +6,7 @@ An MCP server for the Polish Parliament public API.
 
 ## Usage
 
-This server is designed to be run with `npx`, allowing you to use it as a tool provider for LLM clients without a global installation.
+This server is designed to be run with `npx`, allowing you to use it as a tool provider for LLM clients without a global installation. It requires Node.js 22 or newer.
 
 ### Running with `npx`
 
