@@ -62,6 +62,7 @@ Tools that return data (all except the two text tools) declare an `outputSchema`
 | `get-prints` | Prints (druki: bills, reports and other documents) |
 | `get-print` | Details of one print |
 | `get-proceedings` | Plenary sittings (posiedzenia) with their numbers and dates |
+| `get-proceeding` | One plenary sitting with its agenda as text |
 | `get-current-proceeding` | The current or next plenary sitting with its agenda as text |
 | `get-processes` | Legislative processes, filtered by title or document type |
 | `get-passed-processes` | Legislative processes that ended with a passed act |
@@ -84,6 +85,7 @@ Version 2.0 makes the tools easier for LLMs to use and contains breaking changes
 - **Responses** contain compact JSON (no indentation) instead of pretty-printed JSON, and JSON tools also return `structuredContent` matching their `outputSchema`. The text messages before the data are unchanged.
 - **`get-interpellations`** sends its filters to the API under the names the API supports, so `dateFrom`, `dateTo` and `mp` now actually filter the results. The `number`, `club` and `status` parameters, which the API never supported, are removed; use `get-interpellation` for a single interpellation and `delayed: true` for interpellations with an overdue answer. New parameters: `recipient`, `modifiedSince`, `delayed`.
 - **`get-written-questions`** accepts only an MP ID in `from` and gains `delayed`.
+- **`get-proceedings`** no longer returns the agenda and schedules of each sitting as HTML, which made the list about 700 KB; it returns the number, title, dates and `current` flag. The new **`get-proceeding`** tool returns one sitting with its agenda as plain text.
 - **`get-print`** takes `printNumber` as a string, so additional prints such as `1070-A` can be fetched.
 - **`get-processes`** gains the `title` and `documentType` filters of `get-passed-processes`.
 - Parameters with a fixed format are validated: dates (`YYYY-MM-DD`), club IDs, print numbers and sort fields.

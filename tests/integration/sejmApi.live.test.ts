@@ -398,6 +398,7 @@ liveDescribe("Sejm API live integration", () => {
       "get-prints": { term: 10, limit: 3 },
       "get-print": { term: 10, printNumber: "2" },
       "get-proceedings": { term: 10 },
+      "get-proceeding": { term: 10, proceeding: 1 },
       "get-current-proceeding": {},
       "get-process": { term: 10, processNumber: "2" },
       "get-processes": { term: 10, limit: 3 },

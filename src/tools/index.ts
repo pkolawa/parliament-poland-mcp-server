@@ -15,7 +15,7 @@ import {
   getInterpellationTextTool,
 } from "./interpellations.js";
 import { getPrintsTool, getPrintTool } from "./prints.js";
-import { getProceedingsTool, getCurrentProceedingTool } from "./proceedings.js";
+import { getProceedingsTool, getProceedingTool, getCurrentProceedingTool } from "./proceedings.js";
 import { getProcessTool } from "./process.js";
 import { getProcessesTool, getPassedProcessesTool } from "./processes.js";
 import { getTranscriptsTool, getStatementTool } from "./transcripts.js";
@@ -42,6 +42,7 @@ export const tools = {
   "get-prints": getPrintsTool,
   "get-print": getPrintTool,
   "get-proceedings": getProceedingsTool,
+  "get-proceeding": getProceedingTool,
   "get-current-proceeding": getCurrentProceedingTool,
   "get-process": getProcessTool,
   "get-processes": getProcessesTool,
