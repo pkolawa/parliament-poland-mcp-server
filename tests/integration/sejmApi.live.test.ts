@@ -423,5 +423,60 @@ liveDescribe("Sejm API live integration", () => {
         expect(result.structuredContent).toBeDefined();
       }
     });
+
+    async function items(name: string, args: Record<string, unknown>): Promise<Record<string, unknown>[]> {
+      const result = await client.callTool({ name, arguments: args });
+      expect([name, result.isError ?? false]).toEqual([name, false]);
+      return (result.structuredContent as { items: Record<string, unknown>[] }).items;
+    }
+
+    // The spec lists offset and limit for only some endpoints; every tool that takes them must honour them.
+    const paginated = (Object.keys(calls) as (keyof typeof tools)[]).filter(
+      (name) => "limit" in tools[name].schema && "offset" in tools[name].schema
+    );
+
+    it.each(paginated)("%s honours offset and limit", async (name) => {
+      const base = { ...calls[name], offset: undefined, limit: undefined };
+      const firstThree = await items(name, { ...base, limit: 3 });
+      const second = await items(name, { ...base, offset: 1, limit: 1 });
+
+      expect(firstThree).toHaveLength(3);
+      expect(second).toEqual([firstThree[1]]);
+    });
+
+    it("get-interpellations filters by MP, recipient, dates and delay", async () => {
+      const [sample] = await items("get-interpellations", { term: 10, limit: 1 });
+      const mp = Number((sample.from as string[])[0]);
+      const recipient = (sample.to as string[])[0];
+
+      const byMp = await items("get-interpellations", { term: 10, mp, limit: 20 });
+      const byRecipient = await items("get-interpellations", { term: 10, recipient, limit: 20 });
+      const byDate = await items("get-interpellations", {
+        term: 10,
+        dateFrom: "2024-03-01",
+        dateTo: "2024-03-31",
+        limit: 20,
+      });
+      const delayed = await items("get-interpellations", { term: 10, delayed: true, limit: 20 });
+
+      expect(byMp.length).toBeGreaterThan(0);
+      expect(byMp.every((i) => (i.from as string[]).includes(String(mp)))).toBe(true);
+      expect(byRecipient.length).toBeGreaterThan(0);
+      expect(byRecipient.every((i) => (i.to as string[]).includes(recipient))).toBe(true);
+      expect(byDate.length).toBeGreaterThan(0);
+      expect(byDate.every((i) => String(i.sentDate) >= "2024-03-01" && String(i.sentDate) < "2024-04-01")).toBe(true);
+      expect(delayed.length).toBeGreaterThan(0);
+      expect(delayed.every((i) => Number(i.answerDelayedDays) > 0)).toBe(true);
+    });
+
+    it("get-proceeding returns the agenda of one sitting as text", async () => {
+      const result = await client.callTool({ name: "get-proceeding", arguments: { term: 10, proceeding: 1 } });
+      const sitting = result.structuredContent as { number: number; dates: string[]; agenda: string };
+
+      expect(sitting.number).toBe(1);
+      expect(sitting.dates[0]).toBe("2023-11-13");
+      expect(sitting.agenda).toContain("Ślubowanie");
+      expect(sitting.agenda).not.toMatch(/<\/?(p|div|li)\b/);
+    });
   });
 });
