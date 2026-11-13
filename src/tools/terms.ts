@@ -5,7 +5,7 @@ import type { Term } from "../types/api.js";
 export const getTermsTool = {
   description: "Get a list of Sejm terms",
   schema: {
-    offset: z.number().int().positive().optional().describe("Offset for pagination"),
+    offset: z.number().int().nonnegative().optional().describe("Offset for pagination"),
     limit: z.number().int().positive().optional().describe("Limit for pagination"),
   },
   handler: async (args: { offset?: number, limit?: number }) => {

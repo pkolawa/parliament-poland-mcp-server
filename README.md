@@ -42,7 +42,7 @@ The server provides the following functions:
 
 ### Bilateral Groups
 
-- [ ] `getBilateralGroupsTool`: Get a list of bilateral groups in the Sejm.
+- [ ] `getBilateralGroupsTool`: Get a list of bilateral groups for a given term.
 
 ### Clubs
 
@@ -75,7 +75,7 @@ The server provides the following functions:
 
 ### Legislative Process
 
-- [ ] `getProcessTool`: Get information about a specific legislative process.
+- [ ] `getProcessTool`: Get information about a specific legislative process (identified by its print number, e.g. `1070` or `16168-z`).
 - [ ] `getProcessesTool`: Get a list of legislative processes for a given term.
 
 ### Terms
@@ -84,7 +84,7 @@ The server provides the following functions:
 
 ### Transcripts
 
-- [ ] `getTranscriptsTool`: Get a list of transcripts for a given term.
+- [ ] `getTranscriptsTool`: Get the list of transcript statements for a Sejm sitting day.
 
 ### Videos
 

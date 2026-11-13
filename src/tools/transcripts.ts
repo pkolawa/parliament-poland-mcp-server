@@ -1,19 +1,21 @@
 import { z } from "zod";
 import { makeSejmRequest } from "../utils/api.js";
-import type { Transcript } from "../types/api.js";
+import type { StatementList } from "../types/api.js";
 
 export const getTranscriptsTool = {
-  description: "Get a list of transcripts for a given term",
+  description: "Get the list of transcript statements for a Sejm sitting day",
   schema: {
     term: z.number().int().positive().describe("Term of the Sejm"),
-    offset: z.number().int().positive().optional().describe("Offset for pagination"),
-    limit: z.number().int().positive().optional().describe("Limit for pagination"),
+    proceeding: z.number().int().positive().describe("Sejm sitting number"),
+    date: z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/, "Expected a date in YYYY-MM-DD format")
+      .describe("Day of the sitting in YYYY-MM-DD format (see the dates of a sitting in get-proceedings)"),
   },
-  handler: async (args: { term: number, offset?: number, limit?: number }) => {
-    const { term, offset, limit } = args;
-    const transcripts = await makeSejmRequest<Transcript[]>(
-      `/term${term}/speeches`,
-      { offset, limit },
+  handler: async (args: { term: number, proceeding: number, date: string }) => {
+    const { term, proceeding, date } = args;
+    const transcripts = await makeSejmRequest<StatementList>(
+      `/term${term}/proceedings/${proceeding}/${date}/transcripts`
     );
 
     if (!transcripts.ok) {
@@ -21,7 +23,7 @@ export const getTranscriptsTool = {
         content: [
           {
             type: "text" as const,
-            text: `Failed to fetch the list of transcripts for term ${term}.\n\nError: ${transcripts.error.message}`,
+            text: `Failed to fetch the transcript statements for sitting ${proceeding} on ${date} in term ${term}.\n\nError: ${transcripts.error.message}`,
           },
         ],
         isError: true,
@@ -32,7 +34,7 @@ export const getTranscriptsTool = {
       content: [
         {
           type: "text" as const,
-          text: `Fetched the list of transcripts for term ${term}:\n\n${JSON.stringify(transcripts.data, null, 2)}`,
+          text: `Fetched the transcript statements for sitting ${proceeding} on ${date} in term ${term}:\n\n${JSON.stringify(transcripts.data, null, 2)}`,
         },
       ],
     };

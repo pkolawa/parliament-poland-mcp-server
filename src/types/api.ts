@@ -187,11 +187,24 @@ export interface Video {
   otherVideoLinks?: string[];
 }
 
-export interface Transcript {
-  unid?: string;
-  title?: string;
-  date?: string;
-  [key: string]: unknown;
+export interface Statement {
+  /** 0 is always the course of the sitting. */
+  num: number;
+  name: string;
+  function: string;
+  /** MP id if the speaker is an MP, 0 otherwise. */
+  memberID: number;
+  rapporteur: boolean;
+  secretary: boolean;
+  unspoken: boolean;
+  startDateTime?: string;
+  endDateTime?: string;
+}
+
+export interface StatementList {
+  proceedingNum: number;
+  date: string;
+  statements: Statement[];
 }
 
 export interface WrittenQuestion {
@@ -208,8 +221,9 @@ export interface WrittenQuestion {
 }
 
 export interface BilateralGroup {
-  id?: string;
-  name?: string;
-  members?: unknown[];
+  id: number;
+  name: string;
+  engName?: string;
+  appointmentDate?: string;
   [key: string]: unknown;
 }

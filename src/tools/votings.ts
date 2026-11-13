@@ -7,7 +7,7 @@ export const getVotingsTool = {
   schema: {
     term: z.number().int().positive().describe("Term of the Sejm"),
     proceeding: z.number().int().positive().describe("Sejm sitting number"),
-    offset: z.number().int().positive().optional().describe("Offset for pagination"),
+    offset: z.number().int().nonnegative().optional().describe("Offset for pagination"),
     limit: z.number().int().positive().optional().describe("Limit for pagination"),
   },
   handler: async (args: { term: number, proceeding: number, offset?: number, limit?: number }) => {

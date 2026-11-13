@@ -6,7 +6,7 @@ export const getVideosTool = {
   description: "Get a list of video recordings for a given term",
   schema: {
     term: z.number().int().positive().describe("Term of the Sejm"),
-    offset: z.number().int().positive().optional().describe("Offset for pagination"),
+    offset: z.number().int().nonnegative().optional().describe("Offset for pagination"),
     limit: z.number().int().positive().optional().describe("Limit for pagination"),
   },
   handler: async (args: { term: number, offset?: number, limit?: number }) => {

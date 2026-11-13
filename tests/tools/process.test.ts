@@ -22,11 +22,11 @@ describe("getProcessTool", () => {
   it("returns a success message with data", async () => {
     makeSejmRequestMock.mockResolvedValue({ ok: true, data: { number: 77 } });
 
-    const result = await getProcessTool.handler({ term: 10, processNumber: 77 });
+    const result = await getProcessTool.handler({ term: 10, processNumber: "16168-z" });
 
-    expect(makeSejmRequestMock).toHaveBeenCalledWith("/term10/process/77");
+    expect(makeSejmRequestMock).toHaveBeenCalledWith("/term10/processes/16168-z");
     expect(result.content[0].text).toContain(
-      "Fetched process 77 for term 10:"
+      "Fetched process 16168-z for term 10:"
     );
   });
 
@@ -36,10 +36,10 @@ describe("getProcessTool", () => {
       error: { status: 404, message: "HTTP 404 Not Found for /sejm/test" },
     });
 
-    const result = await getProcessTool.handler({ term: 10, processNumber: 77 });
+    const result = await getProcessTool.handler({ term: 10, processNumber: "16168-z" });
 
     expect(result.content[0].text).toContain(
-      "Failed to fetch process 77 for term 10."
+      "Failed to fetch process 16168-z for term 10."
     );
     expect(result.content[0].text).toContain("Error: HTTP 404 Not Found");
     expect(result.isError).toBe(true);

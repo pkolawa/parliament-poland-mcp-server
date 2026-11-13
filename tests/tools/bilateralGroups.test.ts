@@ -22,11 +22,11 @@ describe("getBilateralGroupsTool", () => {
   it("returns a success message with data", async () => {
     makeSejmRequestMock.mockResolvedValue({ ok: true, data: [{ id: 1 }] });
 
-    const result = await getBilateralGroupsTool.handler();
+    const result = await getBilateralGroupsTool.handler({ term: 10 });
 
-    expect(makeSejmRequestMock).toHaveBeenCalledWith("/bilateralGroups");
+    expect(makeSejmRequestMock).toHaveBeenCalledWith("/term10/bilateralGroups");
     expect(result.content[0].text).toContain(
-      "Fetched the list of bilateral groups:"
+      "Fetched the list of bilateral groups for term 10:"
     );
   });
 
@@ -36,10 +36,10 @@ describe("getBilateralGroupsTool", () => {
       error: { status: 404, message: "HTTP 404 Not Found for /sejm/test" },
     });
 
-    const result = await getBilateralGroupsTool.handler();
+    const result = await getBilateralGroupsTool.handler({ term: 10 });
 
     expect(result.content[0].text).toContain(
-      "Failed to fetch the list of bilateral groups."
+      "Failed to fetch the list of bilateral groups for term 10."
     );
     expect(result.content[0].text).toContain("Error: HTTP 404 Not Found");
     expect(result.isError).toBe(true);

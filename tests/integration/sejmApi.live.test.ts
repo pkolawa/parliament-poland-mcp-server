@@ -2,6 +2,10 @@ import { jest } from "@jest/globals";
 import { makeSejmRequest } from "../../src/utils/api.js";
 import { getMpsTool } from "../../src/tools/mps.js";
 import { getTermsTool } from "../../src/tools/terms.js";
+import { getBilateralGroupsTool } from "../../src/tools/bilateralGroups.js";
+import { getProcessTool } from "../../src/tools/process.js";
+import { getTranscriptsTool } from "../../src/tools/transcripts.js";
+import { getWrittenQuestionsTool } from "../../src/tools/writtenQuestions.js";
 
 const runLiveApiTests = process.env.RUN_LIVE_API_TESTS === "true";
 const liveDescribe = runLiveApiTests ? describe : describe.skip;
@@ -102,6 +106,24 @@ async function findFirstTermWithResults(
   }
 
   return null;
+}
+
+async function currentTerm(): Promise<number> {
+  const terms = await fetchData("/term");
+  const termNumber = extractTermNumber(Array.isArray(terms) ? terms : []);
+  if (termNumber === null) {
+    throw new Error("The API returned no terms.");
+  }
+  return termNumber;
+}
+
+function expectToolSuccess(
+  result: { content: { text: string }[]; isError?: boolean },
+  successText: string
+) {
+  const text = result.content[0]?.text ?? "";
+  expect(result.isError).toBeUndefined();
+  expect(text).toContain(successText);
 }
 
 liveDescribe("Sejm API live integration", () => {
@@ -255,5 +277,58 @@ liveDescribe("Sejm API live integration", () => {
 
     expect(text.includes("Failed to fetch")).toBe(false);
     expect(text).toContain(`Fetched the list of MPs for term ${termNumber}:`);
+  });
+
+  it("bilateral groups MCP tool returns success text for live API", async () => {
+    const term = await currentTerm();
+
+    const result = await getBilateralGroupsTool.handler({ term });
+
+    expectToolSuccess(result, `Fetched the list of bilateral groups for term ${term}:`);
+  });
+
+  it("written questions MCP tool returns success text for live API", async () => {
+    const term = await currentTerm();
+
+    const result = await getWrittenQuestionsTool.handler({ term, limit: 1 });
+
+    expectToolSuccess(result, `Fetched the list of written questions for term ${term}:`);
+  });
+
+  it("process MCP tool returns success text for live API", async () => {
+    const term = await currentTerm();
+    const processes = await fetchData(`/term${term}/processes`, { limit: 1 });
+    const first = Array.isArray(processes) ? processes[0] : null;
+    if (!isObject(first) || typeof first.number !== "string") {
+      throw new Error(`No legislative process found in term ${term}.`);
+    }
+
+    const result = await getProcessTool.handler({ term, processNumber: first.number });
+
+    expectToolSuccess(result, `Fetched process ${first.number} for term ${term}:`);
+  });
+
+  it("transcripts MCP tool returns success text for live API", async () => {
+    const term = await currentTerm();
+    const proceedings = await fetchData(`/term${term}/proceedings`);
+    const sitting = (Array.isArray(proceedings) ? proceedings : []).find(
+      (p): p is { number: number; dates: string[] } =>
+        isObject(p) && typeof p.number === "number" && p.number > 0 &&
+        Array.isArray(p.dates) && p.dates.length > 0
+    );
+    if (!sitting) {
+      throw new Error(`No sitting with dates found in term ${term}.`);
+    }
+
+    const result = await getTranscriptsTool.handler({
+      term,
+      proceeding: sitting.number,
+      date: sitting.dates[0],
+    });
+
+    expectToolSuccess(
+      result,
+      `Fetched the transcript statements for sitting ${sitting.number} on ${sitting.dates[0]} in term ${term}:`
+    );
   });
 });
