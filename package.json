@@ -50,6 +50,7 @@
   "devDependencies": {
     "@types/jest": "^30.0.0",
     "@types/node": "^22.20.5",
+    "deepmerge": "file:vendor/deepmerge",
     "esbuild": "^0.28.2",
     "jest": "^30.5.2",
     "ts-jest": "^29.4.15",
@@ -57,6 +58,7 @@
   },
   "overrides": {
     "glob": "^14.0.6",
-    "minimatch": "^11.0.8"
+    "minimatch": "^11.0.8",
+    "deepmerge": "$deepmerge"
   }
 }

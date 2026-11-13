@@ -43,6 +43,8 @@ Tool pattern: handler calls `makeSejmRequest`, returns `{ content: [{ type: "tex
 
 esbuild bundles everything into a single `build/index.mjs` with `#!/usr/bin/env node` banner. The `@modelcontextprotocol/sdk` is external (peer dependency at runtime via npx).
 
+`vendor/deepmerge` is a patched dev-only copy of deepmerge (GHSA-gcqx-w48m-w2h4, no upstream fix) that Jest's `jest-config` loads through `overrides`. `glob` and `minimatch` are overridden for the same reason. Keep `npm audit` at 0; see `vendor/deepmerge/README.md` before removing either.
+
 ## Conventions
 
 - Tool names use kebab-case in the registry (`get-members`, `get-club`)
