@@ -33,6 +33,8 @@ coverage/
 
 # Misc
 dist/
+# The patched deepmerge copy is committed with its built file (see vendor/deepmerge/README.md)
+!vendor/deepmerge/dist/
 tmp/
 
 # MCP Publisher tokens

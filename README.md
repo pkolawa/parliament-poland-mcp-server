@@ -2,7 +2,7 @@
 
 # Parliament of Poland MCP Server
 
-An MCP server for the Polish Parliament public API.
+An MCP server for the Polish Parliament public API: the [Sejm API](https://api.sejm.gov.pl/sejm.html) (MPs, votings, legislative processes, ...) and the [ELI API](https://api.sejm.gov.pl/eli.html) of legal acts published in Dziennik Ustaw and Monitor Polski.
 
 ## Usage
 
@@ -39,8 +39,8 @@ This configuration tells the client how to start the tool server.
 ## Tools
 
 Every tool is read-only (`readOnlyHint: true`) and queries the public Sejm API (`openWorldHint: true`).
-`term` is optional in every tool and defaults to the current term of the Sejm.
-Tools that return data (all except the two text tools) declare an `outputSchema` and return the data as `structuredContent` too; lists come as `{ "items": [...] }`.
+`term` is optional in every Sejm tool and defaults to the current term of the Sejm; the legal act tools do not use it.
+Tools that return data (all except the text tools `get-interpellation-text`, `get-statement` and `get-act-text`) declare an `outputSchema` and return the data as `structuredContent` too; lists come as `{ "items": [...] }`.
 Lists that the Sejm API returns whole (MPs, votings of a sitting, clubs, committees, plenary sittings, terms) are filtered and paginated by the server and come as `{ "total", "offset", "nextOffset", "items" }`, where `nextOffset` is absent on the last page.
 
 | Tool | What it returns |
@@ -76,6 +76,12 @@ Lists that the Sejm API returns whole (MPs, votings of a sitting, clubs, committ
 | `get-voting` | Result of one voting with a breakdown by club, optionally with each MP's vote |
 | `search-votings` | Votings found by title, sitting or date range |
 | `get-bilateral-groups` | Bilateral groups (parliamentary friendship groups) |
+| `search-acts` | Legal acts in Dziennik Ustaw and Monitor Polski, by title, type, keywords, status or dates |
+| `get-act` | Details of one legal act, with references to other acts (amending acts, consolidated texts…) |
+| `get-act-text` | Text of a legal act or of one of its articles, in pages |
+| `get-act-keywords` | Keywords that `search-acts` accepts |
+
+Legal acts come from the [ELI API](https://api.sejm.gov.pl/eli.html), which works independently of the Sejm API. An act is identified by its ELI: publisher (`DU` for Dziennik Ustaw, `MP` for Monitor Polski), year and position, e.g. `DU/2024/1`. The `ELI` field of a legislative process from `get-process` or `get-passed-processes` leads from a bill passed by the Sejm to the act as published, and the `prints` of an act lead back to the process.
 
 ## Upgrading from 1.x
 
@@ -117,6 +123,10 @@ Version 2.0 makes the tools easier for LLMs to use and contains breaking changes
   | `search-votings` | `Search-for-votings-in-a-given-term` |
   | `get-written-questions` | `Get-a-list-of-written-questions-for-a-given-term` |
   | `get-bilateral-groups` | `Get-a-list-of-bilateral-groups-in-the-Sejm` |
+  | `search-acts` | `Search-Polish-legal-acts-in-Dziennik-Ustaw-and-Monitor-Polski` |
+  | `get-act` | `Get-details-of-a-Polish-legal-act` |
+  | `get-act-text` | `Get-the-text-of-a-Polish-legal-act-or-of-one-of-its-articles` |
+  | `get-act-keywords` | `List-keywords-used-to-classify-Polish-legal-acts` |
 
   </details>
 
