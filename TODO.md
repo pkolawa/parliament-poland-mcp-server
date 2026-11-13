@@ -19,5 +19,5 @@
 ## Drobne usprawnienia
 
 - [x] Dodać `strict` typy do `tool.handler` w `src/server.ts` — zamiast `(params: any)` użyć `z.infer` na schemacie
-- [ ] Dodać `.nvmrc` z wersją Node (>=18) dla spójności środowiska
+- [x] Dodać `.nvmrc` z wersją Node (>=18) dla spójności środowiska
 - [ ] Rozważyć enum/stałe dla endpointów API zamiast template strings w każdym toolu

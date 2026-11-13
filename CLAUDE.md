@@ -8,15 +8,16 @@ Parliament Poland MCP Server — TypeScript MCP server exposing the Polish Parli
 
 - TypeScript (ESM, strict mode)
 - @modelcontextprotocol/sdk (MCP server framework)
-- Zod (input schema validation)
+- Zod 4 (input schemas, and output schemas of API responses)
 - esbuild (bundler → build/index.mjs)
 - Jest + ts-jest (testing)
-- Node 18+
+- Node 22+ (`engines`); `.nvmrc` pins 24 for development, CI tests 22, 24 and 26
 
 ## Commands
 
 - `npm test` — run unit tests
 - `npm run test:live-api` — run integration tests against live Sejm API (requires internet)
+- `npm run test:smoke` — start the built server over stdio and check `initialize` and `tools/list`
 - `npm run build` — run tests then bundle with esbuild
 - `npm start` — run the built server
 
@@ -39,6 +40,7 @@ Tool pattern: `handler: ({ term, ... }) => withTerm(term, async (term) => buildT
 
 - Unit tests mock `makeSejmRequest` via `jest.mock`
 - Integration tests (`tests/integration/`) call the real API — gated by `RUN_LIVE_API_TESTS=true`
+- CI: the `live-api` job on PRs is informational (skipped when the API probe gets 5xx, never fails the PR); the daily `live-api-tests` workflow on main is the API health check
 - Each tool has its own test file in `tests/tools/`
 - `tests/mcp.test.ts` exercises the server through an MCP client (tool list, output validation); the live test runs every tool through MCP
 
