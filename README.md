@@ -36,78 +36,57 @@ To integrate this server with an LLM client (like LM Studio or others that suppo
 
 This configuration tells the client how to start the tool server.
 
-## Server Functions
+## Tools
 
-The server provides the following functions:
+Every tool is read-only (`readOnlyHint: true`) and queries the public Sejm API (`openWorldHint: true`).
+`term` is optional in every tool and defaults to the current term of the Sejm.
+Tools that return data (all except the two text tools) declare an `outputSchema` and return the data as `structuredContent` too; lists come as `{ "items": [...] }`.
 
-### Bilateral Groups
+| Tool | What it returns |
+| --- | --- |
+| `get-terms` | Terms (kadencje) of the Sejm with their dates; the current one is the default `term` |
+| `get-members` | MPs (posłowie) of a term with their ID, club and district |
+| `get-member` | Details of one MP |
+| `get-mp-voting-stats` | An MP's attendance in votings for each sitting day |
+| `get-mp-votings` | How an MP voted in every voting on one sitting day |
+| `get-clubs` | Parliamentary clubs and circles (kluby i koła) |
+| `get-club` | Details of one club |
+| `get-committees` | Committees (komisje) with their codes |
+| `get-committee` | Details of one committee, with members |
+| `get-committee-sittings` | Sittings of a committee, filtered by date, with the agenda as text |
+| `get-committee-sitting` | One committee sitting with its agenda and videos |
+| `get-interpellations` | Interpellations (interpelacje), filtered by title, MP, recipient, date or delay |
+| `get-interpellation` | Details of one interpellation, with its replies |
+| `get-interpellation-text` | Text of an interpellation or of a reply to it |
+| `get-written-questions` | Written questions (zapytania), filtered like interpellations |
+| `get-prints` | Prints (druki: bills, reports and other documents) |
+| `get-print` | Details of one print |
+| `get-proceedings` | Plenary sittings (posiedzenia) with their numbers and dates |
+| `get-current-proceeding` | The current or next plenary sitting with its agenda as text |
+| `get-processes` | Legislative processes, filtered by title or document type |
+| `get-passed-processes` | Legislative processes that ended with a passed act |
+| `get-process` | One legislative process with its stages, identified by its print number |
+| `get-transcripts` | Statements in the transcript of one sitting day |
+| `get-statement` | Text of one statement |
+| `get-videos` | Video transmissions of a term |
+| `get-videos-by-date` | Video transmissions of one day (today by default) |
+| `get-votings` | Votings of one plenary sitting |
+| `get-voting` | Result of one voting with a breakdown by club, optionally with each MP's vote |
+| `search-votings` | Votings found by title, sitting or date range |
+| `get-bilateral-groups` | Bilateral groups (parliamentary friendship groups) |
 
-- [ ] `getBilateralGroupsTool`: Get a list of bilateral groups for a given term.
+## Upgrading from 1.x
 
-### Clubs
+Version 2.0 makes the tools easier for LLMs to use and contains breaking changes:
 
-- [ ] `getClubsTool`: Get a list of clubs for a given term.
-- [ ] `getClubTool`: Get detailed information about a specific club.
-
-### Committees
-
-- [ ] `getCommitteesTool`: Get a list of committees for a given term.
-- [ ] `getCommitteeTool`: Get detailed information about a specific committee.
-- [ ] `getCommitteeSittingsTool`: Get a list of sittings of a committee, optionally within a date range.
-- [ ] `getCommitteeSittingTool`: Get details about a single committee sitting, including its agenda and videos.
-
-### Interpellations
-
-- [ ] `getInterpellationsTool`: Get a list of interpellations for a given term.
-- [ ] `getInterpellationTool`: Get detailed information about a specific interpellation.
-- [ ] `getInterpellationTextTool`: Get the text of an interpellation or of a reply to it.
-
-### MPs
-
-- [ ] `getMpTool`: Get information about a member of Parliament.
-- [ ] `getMpsTool`: Get a list of MPs for a given term.
-- [ ] `getMpVotingStatsTool`: Get voting attendance statistics of an MP for each sitting day.
-- [ ] `getMpVotingsTool`: Get how an MP voted on a given sitting day.
-
-### Prints
-
-- [ ] `getPrintsTool`: Get a list of prints for a given term.
-- [ ] `getPrintTool`: Get detailed information about a specific print.
-
-### Proceedings
-
-- [ ] `getProceedingsTool`: Get a list of proceedings for a given term.
-- [ ] `getCurrentProceedingTool`: Get the current or next sitting of the Sejm with its agenda.
-
-### Legislative Process
-
-- [ ] `getProcessTool`: Get information about a specific legislative process (identified by its print number, e.g. `1070` or `16168-z`).
-- [ ] `getProcessesTool`: Get a list of legislative processes for a given term.
-- [ ] `getPassedProcessesTool`: Get a list of passed legislative processes for a given term.
-
-### Terms
-
-- [ ] `getTermsTool`: Get a list of Sejm terms.
-
-### Transcripts
-
-- [ ] `getTranscriptsTool`: Get the list of transcript statements for a Sejm sitting day.
-- [ ] `getStatementTool`: Get the text of a single statement from a sitting transcript.
-
-### Videos
-
-- [ ] `getVideosTool`: Get a list of video recordings for a given term.
-- [ ] `getVideosByDateTool`: Get video transmissions from a given day (today by default).
-
-### Votings
-
-- [ ] `getVotingsTool`: Get a list of votings for a given term.
-- [ ] `getVotingTool`: Get the results of a single voting with a breakdown by club, and optionally how each MP voted.
-- [ ] `searchVotingsTool`: Search for votings by title, sitting or date range.
-
-### Written Questions
-
-- [ ] `getWrittenQuestionsTool`: Get a list of written questions for a given term.
+- **Tool names.** Tools are registered under short kebab-case names, e.g. `get-members` instead of `Get-a-list-of-MPs-for-a-given-term`. Update any client configuration, allow-lists or prompts that refer to the old names. The old name of each tool was its 1.x description with spaces replaced by dashes.
+- **`term` is optional** everywhere and defaults to the current term.
+- **Responses** contain compact JSON (no indentation) instead of pretty-printed JSON, and JSON tools also return `structuredContent` matching their `outputSchema`. The text messages before the data are unchanged.
+- **`get-interpellations`** sends its filters to the API under the names the API supports, so `dateFrom`, `dateTo` and `mp` now actually filter the results. The `number`, `club` and `status` parameters, which the API never supported, are removed; use `get-interpellation` for a single interpellation and `delayed: true` for interpellations with an overdue answer. New parameters: `recipient`, `modifiedSince`, `delayed`.
+- **`get-written-questions`** accepts only an MP ID in `from` and gains `delayed`.
+- **`get-print`** takes `printNumber` as a string, so additional prints such as `1070-A` can be fetched.
+- **`get-processes`** gains the `title` and `documentType` filters of `get-passed-processes`.
+- Parameters with a fixed format are validated: dates (`YYYY-MM-DD`), club IDs, print numbers and sort fields.
 
 ## Development
 

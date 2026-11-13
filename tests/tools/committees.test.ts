@@ -122,7 +122,7 @@ describe("getCommitteeSittingsTool", () => {
     });
 
     expect(result.content[0].text).toContain("Fetched 1 sittings of committee ASW in term 10:");
-    expect(result.content[0].text).toContain('"num": 3');
+    expect(result.structuredContent).toEqual({ items: [{ num: 3, date: "2024-03-10" }] });
   });
 
   it("returns a failure message when the API fails", async () => {
@@ -149,8 +149,7 @@ describe("getCommitteeSittingTool", () => {
 
     expect(makeSejmRequestMock).toHaveBeenCalledWith("/term10/committees/ASW/sittings/1");
     expect(result.content[0].text).toContain("Fetched sitting 1 of committee ASW in term 10:");
-    expect(result.content[0].text).toContain('"agenda": "Wybór Prezydium"');
-    expect(result.content[0].text).toContain('"unid": "a"');
+    expect(result.structuredContent).toEqual({ num: 1, agenda: "Wybór Prezydium", video: [{ unid: "a" }] });
   });
 
   it("returns a failure message when the API fails", async () => {

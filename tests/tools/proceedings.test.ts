@@ -65,8 +65,12 @@ describe("getCurrentProceedingTool", () => {
 
     expect(makeSejmRequestMock).toHaveBeenCalledWith("/term10/proceedings/current");
     expect(result.content[0].text).toContain("Fetched the current sitting for term 10:");
-    expect(result.content[0].text).toContain('"agenda": "- Sprawozdanie Komisji"');
-    expect(result.content[0].text).toContain('"votings": "w przygotowaniu"');
+    expect(result.structuredContent).toEqual({
+      number: 69,
+      dates: ["2026-11-17"],
+      agenda: "- Sprawozdanie Komisji",
+      votings: "w przygotowaniu",
+    });
   });
 
   it("returns a failure message when the API fails", async () => {

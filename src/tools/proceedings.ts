@@ -1,81 +1,57 @@
-import { z } from "zod";
 import { makeSejmRequest } from "../utils/api.js";
 import { htmlToText } from "../utils/html.js";
-import type { Proceeding } from "../types/api.js";
+import { buildToolResponse, defineTool, listOutput, objectOutput, withTerm } from "../utils/tool.js";
+import { ProceedingSchema, type Proceeding } from "../types/api.js";
+import { limit, offset, term } from "./params.js";
 
-export const getProceedingsTool = {
-  description: "Get a list of proceedings for a given term",
+export const getProceedingsTool = defineTool({
+  title: "List plenary sittings",
+  description:
+    "List the plenary sittings of the Sejm (posiedzenia Sejmu: numbered meetings of the whole chamber, " +
+    "each lasting one or more days) in a term, with number, title and dates. " +
+    "The number is the `proceeding` or `sitting` parameter of get-votings, get-voting, get-transcripts " +
+    "and get-mp-votings, and the dates are the days of the sitting.",
   schema: {
-    term: z.number().int().positive().describe("Term of the Sejm"),
-    offset: z.number().int().nonnegative().optional().describe("Offset for pagination"),
-    limit: z.number().int().positive().optional().describe("Limit for pagination"),
+    term: term(),
+    offset: offset(),
+    limit: limit(),
   },
-  handler: async (args: { term: number, offset?: number, limit?: number }) => {
-    const { term, offset, limit } = args;
-    const proceedings = await makeSejmRequest<Proceeding[]>(
-      `/term${term}/proceedings`,
-      { offset, limit },
-    );
+  outputSchema: listOutput(ProceedingSchema),
+  handler: ({ term, offset, limit }) =>
+    withTerm(term, async (term) =>
+      buildToolResponse(
+        await makeSejmRequest<Proceeding[]>(`/term${term}/proceedings`, { offset, limit }),
+        `Fetched the list of proceedings for term ${term}:`,
+        `Failed to fetch the list of proceedings for term ${term}.`
+      )
+    ),
+});
 
-    if (!proceedings.ok) {
-      return {
-        content: [
-          {
-            type: "text" as const,
-            text: `Failed to fetch the list of proceedings for term ${term}.\n\nError: ${proceedings.error.message}`,
-          },
-        ],
-        isError: true,
-      };
-    }
-
-    return {
-      content: [
-        {
-          type: "text" as const,
-          text: `${proceedings.notice ?? ""}Fetched the list of proceedings for term ${term}:\n\n${JSON.stringify(proceedings.data, null, 2)}`,
-        },
-      ],
-    };
-  },
-};
-
-export const getCurrentProceedingTool = {
-  description: "Get the current or next sitting of the Sejm with its agenda",
+export const getCurrentProceedingTool = defineTool({
+  title: "Get the current plenary sitting",
+  description:
+    "Get the current plenary sitting of the Sejm, or the next one if none is in progress, with its number, dates, " +
+    "agenda (porządek dzienny), schedule, voting schedule and current affairs, as plain text.",
   schema: {
-    term: z.number().int().positive().describe("Term of the Sejm"),
+    term: term(),
   },
-  handler: async (args: { term: number }) => {
-    const { term } = args;
-    const proceeding = await makeSejmRequest<Proceeding>(`/term${term}/proceedings/current`);
-
-    if (!proceeding.ok) {
-      return {
-        content: [
-          {
-            type: "text" as const,
-            text: `Failed to fetch the current sitting for term ${term}.\n\nError: ${proceeding.error.message}`,
-          },
-        ],
-        isError: true,
-      };
-    }
-
-    const result = { ...proceeding.data };
-    for (const field of ["agenda", "currentAffairs", "schedule", "votings"] as const) {
-      const html = result[field];
-      if (html) {
-        result[field] = htmlToText(html);
-      }
-    }
-
-    return {
-      content: [
-        {
-          type: "text" as const,
-          text: `${proceeding.notice ?? ""}Fetched the current sitting for term ${term}:\n\n${JSON.stringify(result, null, 2)}`,
-        },
-      ],
-    };
-  },
-};
+  outputSchema: objectOutput(ProceedingSchema),
+  handler: ({ term }) =>
+    withTerm(term, async (term) =>
+      buildToolResponse(
+        await makeSejmRequest<Proceeding>(`/term${term}/proceedings/current`),
+        `Fetched the current sitting for term ${term}:`,
+        `Failed to fetch the current sitting for term ${term}.`,
+        (proceeding) => {
+          const result = { ...proceeding };
+          for (const field of ["agenda", "currentAffairs", "schedule", "votings"] as const) {
+            const html = result[field];
+            if (html) {
+              result[field] = htmlToText(html);
+            }
+          }
+          return result;
+        }
+      )
+    ),
+});

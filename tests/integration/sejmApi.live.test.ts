@@ -1,5 +1,9 @@
 import { jest } from "@jest/globals";
+import { Client } from "@modelcontextprotocol/sdk/client/index.js";
+import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import { makeSejmRequest } from "../../src/utils/api.js";
+import { server } from "../../src/server.js";
+import { tools } from "../../src/tools/index.js";
 import { getMpsTool } from "../../src/tools/mps.js";
 import { getTermsTool } from "../../src/tools/terms.js";
 import { getBilateralGroupsTool } from "../../src/tools/bilateralGroups.js";
@@ -360,5 +364,63 @@ liveDescribe("Sejm API live integration", () => {
     expect(result.isError).toBeUndefined();
     expect(result.content[0].text).toContain(expected);
     expect(result.content[0].text).not.toMatch(/<\/?(p|div|html)\b/);
+  });
+  // Every tool through the MCP protocol, so the SDK validates the structured content of live
+  // responses against the output schemas (on the server and again in the client).
+  describe("every tool through MCP", () => {
+    const client = new Client({ name: "live-test", version: "1.0.0" });
+
+    beforeAll(async () => {
+      const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
+      await Promise.all([server.connect(serverTransport), client.connect(clientTransport)]);
+    });
+
+    afterAll(async () => {
+      await client.close();
+    });
+
+    // Historical records of the 10th term; `term` is omitted in a few calls to use the current term.
+    const calls: Record<keyof typeof tools, Record<string, unknown>> = {
+      "get-terms": {},
+      "get-members": { limit: 5 },
+      "get-member": { term: 10, id: 1 },
+      "get-mp-voting-stats": { term: 10, id: 1 },
+      "get-mp-votings": { term: 10, id: 1, sitting: 1, date: "2023-11-13" },
+      "get-clubs": { term: 10 },
+      "get-club": { term: 10, id: "KO" },
+      "get-committees": { term: 10 },
+      "get-committee": { term: 10, id: "ASW" },
+      "get-committee-sittings": { term: 10, code: "ASW", dateTo: "2023-11-30" },
+      "get-committee-sitting": { term: 10, code: "ASW", num: 1 },
+      "get-interpellations": { term: 10, limit: 3 },
+      "get-interpellation": { term: 10, id: 10 },
+      "get-interpellation-text": { term: 10, num: 10 },
+      "get-prints": { term: 10, limit: 3 },
+      "get-print": { term: 10, printNumber: "2" },
+      "get-proceedings": { term: 10 },
+      "get-current-proceeding": {},
+      "get-process": { term: 10, processNumber: "2" },
+      "get-processes": { term: 10, limit: 3 },
+      "get-passed-processes": { term: 10, limit: 3 },
+      "get-transcripts": { term: 10, proceeding: 1, date: "2023-11-13" },
+      "get-statement": { term: 10, proceeding: 1, date: "2023-11-13", statementNum: 1 },
+      "get-videos": { term: 10, limit: 3 },
+      "get-videos-by-date": { term: 10, date: "2023-11-13" },
+      "get-votings": { term: 10, proceeding: 1 },
+      "get-voting": { term: 10, sitting: 1, votingNumber: 1, includeVotes: true },
+      "search-votings": { term: 10, title: "Marszałka", limit: 3 },
+      "get-written-questions": { term: 10, limit: 3 },
+      "get-bilateral-groups": {},
+    };
+
+    it.each(Object.entries(calls))("%s returns valid data", async (name, args) => {
+      const result = await client.callTool({ name, arguments: args });
+      const [content] = result.content as { type: string; text: string }[];
+
+      expect([name, result.isError ?? false, content.text.slice(0, 300)]).toEqual([name, false, expect.any(String)]);
+      if (tools[name as keyof typeof tools].outputSchema) {
+        expect(result.structuredContent).toBeDefined();
+      }
+    });
   });
 });

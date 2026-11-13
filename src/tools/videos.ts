@@ -1,78 +1,46 @@
-import { z } from "zod";
 import { makeSejmRequest } from "../utils/api.js";
-import type { Video } from "../types/api.js";
+import { buildToolResponse, defineTool, listOutput, withTerm } from "../utils/tool.js";
+import { VideoSchema, type Video } from "../types/api.js";
+import { date, limit, offset, term } from "./params.js";
 
-export const getVideosTool = {
-  description: "Get a list of video recordings for a given term",
+export const getVideosTool = defineTool({
+  title: "List video transmissions",
+  description:
+    "List video transmissions (transmisje) of plenary sittings, committee sittings and other events in the Sejm " +
+    "in a term, with title, type, room, start time and links to the player and the video.",
   schema: {
-    term: z.number().int().positive().describe("Term of the Sejm"),
-    offset: z.number().int().nonnegative().optional().describe("Offset for pagination"),
-    limit: z.number().int().positive().optional().describe("Limit for pagination"),
+    term: term(),
+    offset: offset(),
+    limit: limit(),
   },
-  handler: async (args: { term: number, offset?: number, limit?: number }) => {
-    const { term, offset, limit } = args;
-    const videos = await makeSejmRequest<Video[]>(
-      `/term${term}/videos`,
-      { offset, limit },
-    );
+  outputSchema: listOutput(VideoSchema),
+  handler: ({ term, offset, limit }) =>
+    withTerm(term, async (term) =>
+      buildToolResponse(
+        await makeSejmRequest<Video[]>(`/term${term}/videos`, { offset, limit }),
+        `Fetched the list of video recordings for term ${term}:`,
+        `Failed to fetch the list of video recordings for term ${term}.`
+      )
+    ),
+});
 
-    if (!videos.ok) {
-      return {
-        content: [
-          {
-            type: "text" as const,
-            text: `Failed to fetch the list of video recordings for term ${term}.\n\nError: ${videos.error.message}`,
-          },
-        ],
-        isError: true,
-      };
-    }
-
-    return {
-      content: [
-        {
-          type: "text" as const,
-          text: `${videos.notice ?? ""}Fetched the list of video recordings for term ${term}:\n\n${JSON.stringify(videos.data, null, 2)}`,
-        },
-      ],
-    };
-  },
-};
-
-export const getVideosByDateTool = {
-  description: "Get video transmissions from a given day",
+export const getVideosByDateTool = defineTool({
+  title: "List video transmissions of a day",
+  description:
+    "List video transmissions (transmisje) from the Sejm on one day: plenary and committee sittings and other events, " +
+    "with title, type, room, start time and links to the player and the video.",
   schema: {
-    term: z.number().int().positive().describe("Term of the Sejm"),
-    date: z
-      .string()
-      .regex(/^\d{4}-\d{2}-\d{2}$/, "Expected a date in YYYY-MM-DD format")
-      .optional()
-      .describe("Day in YYYY-MM-DD format; omit for today"),
+    term: term(),
+    date: date("Day of the transmissions; omit for today").optional(),
   },
-  handler: async (args: { term: number, date?: string }) => {
-    const { term, date } = args;
-    const day = date ?? "today";
-    const videos = await makeSejmRequest<Video[]>(`/term${term}/videos/${day}`);
-
-    if (!videos.ok) {
-      return {
-        content: [
-          {
-            type: "text" as const,
-            text: `Failed to fetch video transmissions for ${day} in term ${term}.\n\nError: ${videos.error.message}`,
-          },
-        ],
-        isError: true,
-      };
-    }
-
-    return {
-      content: [
-        {
-          type: "text" as const,
-          text: `${videos.notice ?? ""}Fetched video transmissions for ${day} in term ${term}:\n\n${JSON.stringify(videos.data, null, 2)}`,
-        },
-      ],
-    };
-  },
-};
+  outputSchema: listOutput(VideoSchema),
+  handler: ({ term, date }) =>
+    withTerm(term, async (term) => {
+      const day = date ?? "today";
+      return buildToolResponse(
+        await makeSejmRequest<Video[]>(`/term${term}/videos/${day}`),
+        `Fetched video transmissions for ${day} in term ${term}:`,
+        `Failed to fetch video transmissions for ${day} in term ${term}.`
+      );
+    }),
+});

@@ -26,16 +26,21 @@ Parliament Poland MCP Server — TypeScript MCP server exposing the Polish Parli
 - `src/server.ts` — registers all tools with McpServer
 - `src/utils/api.ts` — HTTP client (`makeSejmRequest`): retries, in-memory cache, `format: "html"` for HTML endpoints
 - `src/utils/html.ts` — `htmlToText` for statement, interpellation and agenda HTML
-- `src/tools/*.ts` — each file exports tool objects with `{ description, schema, handler }`
-- `src/tools/index.ts` — aggregates all tools into a single map
+- `src/utils/tool.ts` — `defineTool`, `buildToolResponse` (API result → MCP response), `withTerm` (default to the current term), output schema helpers
+- `src/types/api.ts` — lenient Zod schemas of API responses (types via `z.infer`, also used as `outputSchema`)
+- `src/tools/params.ts` — shared input parameters (`term`, `offset`, `limit`, dates, IDs) with LLM-oriented descriptions
+- `src/tools/*.ts` — each file exports tools built with `defineTool({ title, description, schema, outputSchema, handler })`
+- `src/tools/index.ts` — aggregates all tools into a single map; the keys are the MCP tool names
 
-Tool pattern: handler calls `makeSejmRequest`, returns `{ content: [{ type: "text", text }] }`.
+Tool pattern: `handler: ({ term, ... }) => withTerm(term, async (term) => buildToolResponse(await makeSejmRequest<T>(endpoint, params), successMsg, failMsg, transform?))`.
+`buildToolResponse` returns compact JSON after the message plus `structuredContent` (lists as `{ items }`), a plain-text body for string data, the cache `notice` as a prefix, and `isError: true` with the failure message on errors.
 
 ## Testing
 
 - Unit tests mock `makeSejmRequest` via `jest.mock`
 - Integration tests (`tests/integration/`) call the real API — gated by `RUN_LIVE_API_TESTS=true`
 - Each tool has its own test file in `tests/tools/`
+- `tests/mcp.test.ts` exercises the server through an MCP client (tool list, output validation); the live test runs every tool through MCP
 
 ## Build
 
@@ -43,8 +48,11 @@ esbuild bundles everything into a single `build/index.mjs` with `#!/usr/bin/env 
 
 ## Conventions
 
-- Tool names use kebab-case in the registry (`get-members`, `get-club`)
-- MCP tool IDs are derived from description with spaces replaced by dashes
-- All handlers return MCP content format with `type: "text"`
+- The registry key is the MCP tool name, in kebab-case (`get-members`, `get-club`); renaming one is a breaking change
+- Every tool is registered with `readOnlyHint: true` and `openWorldHint: true`
+- `term` is optional in every tool (`term()` from `params.ts`) and resolved with `withTerm`
+- Descriptions are written for LLMs: explain Polish terms (posiedzenie, druk, klub…), date formats and which tool provides each ID
+- JSON tools declare an `outputSchema`; plain-text tools (`get-statement`, `get-interpellation-text`) do not
+- Output schemas stay lenient (optional, nullable, passthrough): a stricter schema makes the SDK reject live responses
 
 @TODO.md

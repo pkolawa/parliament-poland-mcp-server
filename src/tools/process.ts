@@ -1,45 +1,27 @@
-import { z } from "zod";
 import { makeSejmRequest } from "../utils/api.js";
-import type { LegislativeProcess } from "../types/api.js";
+import { buildToolResponse, defineTool, objectOutput, withTerm } from "../utils/tool.js";
+import { LegislativeProcessDetailsSchema, type LegislativeProcess } from "../types/api.js";
+import { printNumber, term } from "./params.js";
 
-export const getProcessTool = {
-  description: "Get information about a specific legislative process",
+export const getProcessTool = defineTool({
+  title: "Get a legislative process",
+  description:
+    "Get one legislative process (proces legislacyjny: the path of a bill or resolution through the Sejm, " +
+    "Senate and President) with its stages and dates (readings, committee work, votings, Senate position, " +
+    "signature), whether it passed, and the ELI and citation of the published act.",
   schema: {
-    term: z.number().int().positive().describe("Term of the Sejm"),
-    processNumber: z
-      .string()
-      .regex(/^\d+(-[0-9A-Za-z]+)?$/, "Expected a print number such as 1070 or 16168-z")
-      .describe("Print number identifying the legislative process, e.g. 1070 or 16168-z"),
+    term: term(),
+    processNumber: printNumber(
+      "Number of the print that started the process, e.g. 1070: the `number` field from get-processes or get-passed-processes"
+    ),
   },
-  handler: async (args: { term: number; processNumber: string }) => {
-    const { term, processNumber } = args;
-    const process = await makeSejmRequest<LegislativeProcess>(
-      `/term${term}/processes/${processNumber}`
-    );
-
-    if (!process.ok) {
-      return {
-        content: [
-          {
-            type: "text" as const,
-            text: `Failed to fetch process ${processNumber} for term ${term}.\n\nError: ${process.error.message}`,
-          },
-        ],
-        isError: true,
-      };
-    }
-
-    return {
-      content: [
-        {
-          type: "text" as const,
-          text: `${process.notice ?? ""}Fetched process ${processNumber} for term ${term}:\n\n${JSON.stringify(
-            process.data,
-            null,
-            2
-          )}`,
-        },
-      ],
-    };
-  },
-};
+  outputSchema: objectOutput(LegislativeProcessDetailsSchema),
+  handler: ({ term, processNumber }) =>
+    withTerm(term, async (term) =>
+      buildToolResponse(
+        await makeSejmRequest<LegislativeProcess>(`/term${term}/processes/${processNumber}`),
+        `Fetched process ${processNumber} for term ${term}:`,
+        `Failed to fetch process ${processNumber} for term ${term}.`
+      )
+    ),
+});
