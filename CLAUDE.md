@@ -2,7 +2,7 @@
 
 ## Project
 
-Parliament Poland MCP Server — TypeScript MCP server exposing the Polish Parliament public API (api.sejm.gov.pl) as tools for LLMs.
+Parliament Poland MCP Server — TypeScript MCP server exposing the Polish Parliament public API (api.sejm.gov.pl: the Sejm API and the ELI API of legal acts) as tools for LLMs.
 
 ## Stack
 
@@ -25,8 +25,8 @@ Parliament Poland MCP Server — TypeScript MCP server exposing the Polish Parli
 
 - `src/index.ts` — entry point, stdio transport
 - `src/server.ts` — registers all tools with McpServer
-- `src/utils/api.ts` — HTTP client (`makeSejmRequest`): retries, in-memory cache, `format: "html"` for HTML endpoints
-- `src/utils/html.ts` — `htmlToText` for statement, interpellation and agenda HTML
+- `src/utils/api.ts` — HTTP client (`makeSejmRequest`): retries, in-memory cache, `format: "html"` for HTML endpoints, `api: "eli"` for the legal acts API (`/eli` instead of `/sejm`)
+- `src/utils/html.ts` — `htmlToText` for statement, interpellation and agenda HTML; `actHtmlToText` for the text of legal acts
 - `src/utils/tool.ts` — `defineTool`, `buildToolResponse` (API result → MCP response), `withTerm` (default to the current term), output schema helpers
 - `src/types/api.ts` — lenient Zod schemas of API responses (types via `z.infer`, also used as `outputSchema`)
 - `src/tools/params.ts` — shared input parameters (`term`, `offset`, `limit`, dates, IDs) with LLM-oriented descriptions
@@ -47,6 +47,8 @@ Tool pattern: `handler: ({ term, ... }) => withTerm(term, async (term) => buildT
 ## Build
 
 esbuild bundles everything into a single `build/index.mjs` with `#!/usr/bin/env node` banner. The `@modelcontextprotocol/sdk` is external (peer dependency at runtime via npx).
+
+`vendor/deepmerge` is a patched dev-only copy of deepmerge (GHSA-gcqx-w48m-w2h4, no upstream fix) that Jest's `jest-config` loads through `overrides`. `glob` and `minimatch` are overridden for the same reason. Keep `npm audit` at 0; see `vendor/deepmerge/README.md` before removing either.
 
 ## Conventions
 

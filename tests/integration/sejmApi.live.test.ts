@@ -18,6 +18,7 @@ import { getStatementTool } from "../../src/tools/transcripts.js";
 import { getCommitteeSittingsTool, getCommitteeSittingTool } from "../../src/tools/committees.js";
 import { getInterpellationTextTool } from "../../src/tools/interpellations.js";
 import { getVideosByDateTool } from "../../src/tools/videos.js";
+import { getActKeywordsTool, getActTextTool, getActTool, searchActsTool } from "../../src/tools/acts.js";
 
 const runLiveApiTests = process.env.RUN_LIVE_API_TESTS === "true";
 const liveDescribe = runLiveApiTests ? describe : describe.skip;
@@ -412,6 +413,10 @@ liveDescribe("Sejm API live integration", () => {
       "search-votings": { term: 10, title: "Marszałka", limit: 3 },
       "get-written-questions": { term: 10, limit: 3 },
       "get-bilateral-groups": {},
+      "search-acts": { publisher: "DU", year: 2024, limit: 3 },
+      "get-act": { publisher: "DU", year: 1964, position: 93 },
+      "get-act-text": { publisher: "DU", year: 1964, position: 93, article: "415" },
+      "get-act-keywords": { query: "cywil" },
     };
 
     it.each(Object.entries(calls))("%s returns valid data", async (name, args) => {
@@ -478,5 +483,58 @@ liveDescribe("Sejm API live integration", () => {
       expect(sitting.agenda).toContain("Ślubowanie");
       expect(sitting.agenda).not.toMatch(/<\/?(p|div|li)\b/);
     });
+  });
+});
+
+liveDescribe("ELI API live integration", () => {
+  jest.setTimeout(60_000);
+
+  // Acts published long ago, whose title and text will not change: the Civil Code of 1964,
+  // the consolidated Labour Code of 2023 and a regulation of 2024.
+  it.each([
+    [
+      "search-acts",
+      () => searchActsTool.handler({ title: "Kodeks cywilny", publisher: "DU", year: 1964, type: "Ustawa" }),
+      '"ELI":"DU/1964/93"',
+    ],
+    ["get-act", () => getActTool.handler({ publisher: "DU", year: 1964, position: 93 }), "Ustawa z dnia 23 kwietnia 1964 r. - Kodeks cywilny."],
+    [
+      "get-act (references of one type)",
+      () => getActTool.handler({ publisher: "DU", year: 1964, position: 93, referenceType: "Przepisy wprowadzające" }),
+      "DU/1964/94",
+    ],
+    [
+      "get-act-text (article)",
+      () => getActTextTool.handler({ publisher: "DU", year: 1964, position: 93, article: "415" }),
+      "Art. 415. Kto z winy swej wyrządził drugiemu szkodę, obowiązany jest do jej naprawienia.",
+    ],
+    [
+      "get-act-text (article with superscript)",
+      () => getActTextTool.handler({ publisher: "DU", year: 2023, position: 1465, article: "18^3a" }),
+      "Art. 18^3a. § 1. Pracownicy powinni być równo traktowani",
+    ],
+    [
+      "get-act-text (truncated whole act)",
+      () => getActTextTool.handler({ publisher: "DU", year: 2024, position: 1 }),
+      "Call again with offset=",
+    ],
+    ["get-act-keywords", () => getActKeywordsTool.handler({ query: "cywil" }), "kodeks cywilny"],
+  ] as const)("%s MCP tool returns success text for live API", async (_name, call, expected) => {
+    const result = await call();
+
+    expect(result.isError).toBeUndefined();
+    expect(result.content[0].text).toContain(expected);
+    expect(result.content[0].text).not.toMatch(/<\/?(p|div|html|span)\b/);
+  });
+
+  it("get-act-text continues a truncated text from the given offset", async () => {
+    const first = await getActTextTool.handler({ publisher: "DU", year: 2024, position: 1, maxLength: 5_000 });
+    const offset = Number(first.content[0].text.match(/offset=(\d+)/)?.[1]);
+    const second = await getActTextTool.handler({ publisher: "DU", year: 2024, position: 1, offset, maxLength: 5_000 });
+
+    expect(first.content[0].text).toContain("Rozporządzenie Ministra Obrony Narodowej");
+    expect(offset).toBeGreaterThan(2_500);
+    expect(second.isError).toBeUndefined();
+    expect(second.content[0].text).toContain(`(characters ${offset}-`);
   });
 });

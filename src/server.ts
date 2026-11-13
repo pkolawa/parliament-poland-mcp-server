@@ -3,7 +3,7 @@ import { tools } from "./tools/index.js";
 
 export const server = new McpServer({
   name: "Parliament Poland MCP Server",
-  version: "1.4.0",
+  version: "1.5.0",
 });
 
 /** Every tool only reads public data from the Sejm API. */

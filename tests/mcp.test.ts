@@ -55,7 +55,7 @@ describe("MCP protocol", () => {
 
   it("publishes self-contained output schemas for JSON tools", async () => {
     const { tools: listed } = await client.listTools();
-    const textTools = ["get-interpellation-text", "get-statement"];
+    const textTools = ["get-interpellation-text", "get-statement", "get-act-text"];
 
     for (const tool of listed) {
       if (textTools.includes(tool.name)) {

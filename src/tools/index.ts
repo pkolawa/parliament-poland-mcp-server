@@ -23,6 +23,7 @@ import { getVideosTool, getVideosByDateTool } from "./videos.js";
 import { getVotingsTool, getVotingTool, searchVotingsTool } from "./votings.js";
 import { getWrittenQuestionsTool } from "./writtenQuestions.js";
 import { getBilateralGroupsTool } from "./bilateralGroups.js";
+import { searchActsTool, getActTool, getActTextTool, getActKeywordsTool } from "./acts.js";
 
 export const tools = {
   "get-terms": getTermsTool,
@@ -56,4 +57,8 @@ export const tools = {
   "search-votings": searchVotingsTool,
   "get-written-questions": getWrittenQuestionsTool,
   "get-bilateral-groups": getBilateralGroupsTool,
+  "search-acts": searchActsTool,
+  "get-act": getActTool,
+  "get-act-text": getActTextTool,
+  "get-act-keywords": getActKeywordsTool,
 };

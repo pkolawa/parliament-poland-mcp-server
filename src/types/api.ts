@@ -326,3 +326,89 @@ export const BilateralGroupSchema = obj({
   appointmentDate: str(),
 });
 export type BilateralGroup = z.infer<typeof BilateralGroupSchema>;
+
+/*
+ * Legal acts from the ELI API (https://api.sejm.gov.pl/eli.html), lenient like the schemas above.
+ */
+
+// Fields that search results and act details share.
+const actSummaryShape = {
+  ELI: str().describe(
+    "European Legislation Identifier: publisher/year/position, e.g. DU/2024/1; its parts identify the act in get-act and get-act-text"
+  ),
+  displayAddress: str().describe("Citation, e.g. Dz.U. 2024 poz. 1"),
+  title: str(),
+  type: str().describe("Type of act, e.g. Ustawa, Rozporządzenie or Obwieszczenie"),
+  status: str().describe("Legal status in Polish, e.g. obowiązujący or uchylony"),
+  inForce: str().describe("IN_FORCE, NOT_IN_FORCE or UNKNOWN"),
+  announcementDate: str().describe("Date of the act, i.e. of its signing (YYYY-MM-DD)"),
+  promulgation: str().describe("Date of publication (YYYY-MM-DD)"),
+  entryIntoForce: str().describe("Date of entry into force (YYYY-MM-DD)"),
+  textHTML: bool().describe("Whether get-act-text can return the text; otherwise the act is only a PDF"),
+};
+
+export const ActSchema = obj({
+  ...actSummaryShape,
+  address: str(),
+  publisher: str().describe("DU (Dziennik Ustaw) or MP (Monitor Polski)"),
+  year: num(),
+  volume: num(),
+  pos: num().describe("Position in the journal"),
+  changeDate: str(),
+  textPDF: bool(),
+  validFrom: str(),
+  repealDate: str(),
+  expirationDate: str(),
+  legalStatusDate: str(),
+  comments: str(),
+  releasedBy: strings().describe("Issuing authority"),
+  authorizedBody: strings(),
+  obligated: strings(),
+  keywords: strings().describe("Keywords, as accepted by search-acts"),
+  keywordsNames: strings(),
+  previousTitle: strings(),
+  directives: z.array(obj({ address: str(), title: str(), date: str() })).nullish(),
+  texts: z.array(obj({ fileName: str(), type: str() })).nullish(),
+  prints: z
+    .array(obj({ term: num(), number: str(), link: str(), linkPrintAPI: str(), linkProcessAPI: str() }))
+    .nullish()
+    .describe("Sejm prints of the bill; their number identifies the legislative process in get-process"),
+  references: z
+    .record(z.string(), z.unknown())
+    .nullish()
+    .describe(
+      "References to other acts by type, e.g. Akty zmieniające (amending acts) or Inf. o tekście jednolitym " +
+        "(consolidated texts): lists of { id: ELI, art, date }. For acts with many references, each type is " +
+        "summarized as { count, newest }; get-act with referenceType lists one type in full"
+    ),
+});
+export type Act = z.infer<typeof ActSchema>;
+
+export const ActSummarySchema = obj(actSummaryShape);
+
+export const ActListSchema = obj({
+  totalCount: num().describe("Number of acts that match the search"),
+  offset: num(),
+  count: num().describe("Number of acts in this response"),
+  items: z.array(ActSchema).nullish(),
+});
+export type ActList = z.infer<typeof ActListSchema>;
+
+/** A reference from one act to another, e.g. to an amending act. */
+export interface ActReference {
+  /** ELI of the referenced act, e.g. DU/2024/1. */
+  id: string;
+  art?: string;
+  date?: string;
+}
+
+/** A unit of an act (book, chapter, article, paragraph…) in the structure of the act; not a tool output. */
+export interface ActUnit {
+  id: string;
+  /** book, part, titl, bran, chpt, schp, arti, pass, para, pint, lett… */
+  type: string;
+  /** Number or name of the unit within its parent, e.g. 415 or 18_3_a for Art. 18^3a; absent for top-level parts. */
+  name?: string;
+  title?: string;
+  children?: ActUnit[];
+}
