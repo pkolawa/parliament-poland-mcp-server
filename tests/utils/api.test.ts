@@ -3,6 +3,7 @@ import {
   clearSejmCache,
   FRESH_TTL_MS,
   makeSejmRequest,
+  MAX_CACHE_CHARS,
   REQUEST_TIMEOUT_MS,
   RETRY_DELAYS_MS,
   STALE_TTL_MS,
@@ -72,6 +73,55 @@ describe("makeSejmRequest", () => {
     expect(result).toEqual({ ok: true, data: "<p>Tekst</p>" });
     const [, options] = fetchMock.mock.calls[0] as [string, RequestInit];
     expect(options.headers).toEqual({ Accept: "text/html" });
+  });
+
+  it("sends requests for the eli API to its base URL with its own 404 hint", async () => {
+    fetchMock
+      .mockImplementationOnce(() => json({ ELI: "DU/1964/93" }))
+      .mockImplementationOnce(() => status(404, "Not Found"));
+
+    const found = await makeSejmRequest("/acts/DU/1964/93", undefined, { api: "eli" });
+    const missing = await settle(makeSejmRequest("/acts/DU/1964/999999", undefined, { api: "eli" }));
+
+    expect(found).toEqual({ ok: true, data: { ELI: "DU/1964/93" } });
+    expect(String(fetchMock.mock.calls[0][0])).toBe("https://api.sejm.gov.pl/eli/acts/DU/1964/93");
+    expect(missing).toEqual({
+      ok: false,
+      error: {
+        status: 404,
+        message:
+          "HTTP 404 Not Found for /eli/acts/DU/1964/999999. The requested act does not exist; " +
+          "check the publisher, year and position passed to the tool.",
+      },
+    });
+  });
+
+  it("names the eli API when it is unavailable", async () => {
+    fetchMock.mockImplementation(() => status(503, "Service Unavailable"));
+
+    const result = await settle(makeSejmRequest("/acts/search", { title: "kodeks" }, { api: "eli" }));
+
+    expect(result.ok).toBe(false);
+    expect(!result.ok && result.error.message).toBe(
+      "HTTP 503 Service Unavailable for /eli/acts/search (3 attempts). " +
+        "The ELI API is temporarily unavailable; try again in a few minutes."
+    );
+  });
+
+  it("uses a longer timeout when asked to", async () => {
+    const timeoutSpy = jest.spyOn(AbortSignal, "timeout");
+    fetchMock.mockRejectedValue(
+      new DOMException("The operation was aborted due to timeout", "TimeoutError")
+    );
+
+    const result = await settle(
+      makeSejmRequest("/acts/DU/1964/93/text.html", undefined, { api: "eli", format: "html", timeoutMs: 30_000 })
+    );
+
+    expect(timeoutSpy).toHaveBeenCalledWith(30_000);
+    expect(!result.ok && result.error.message).toContain(
+      "Request to /eli/acts/DU/1964/93/text.html timed out after 30s."
+    );
   });
 
   it("returns the HTTP status and a hint to check parameters on 404 without retrying", async () => {
@@ -169,6 +219,48 @@ describe("makeSejmRequest", () => {
       jest.advanceTimersByTime(FRESH_TTL_MS);
       await makeSejmRequest("/term10/MP", { limit: 1 });
       expect(fetchMock).toHaveBeenCalledTimes(3);
+    });
+
+    it("serves published acts and their texts from the cache but not searches", async () => {
+      fetchMock.mockImplementation(() => json({}));
+
+      for (const endpoint of [
+        "/acts/DU/1964/93",
+        "/acts/DU/1964/93/struct",
+        "/acts/DU/1964/93/text.html",
+        "/acts/DU/1964/93/text.html/book=trzecia/titl=VI/arti=415",
+        "/keywords",
+        "/acts/search",
+      ]) {
+        await makeSejmRequest(endpoint, undefined, { api: "eli" });
+        await makeSejmRequest(endpoint, undefined, { api: "eli" });
+      }
+
+      expect(fetchMock).toHaveBeenCalledTimes(7);
+      expect(String(fetchMock.mock.calls[6][0])).toBe("https://api.sejm.gov.pl/eli/acts/search");
+    });
+
+    it("evicts the oldest responses once their total size exceeds the limit", async () => {
+      const big = "x".repeat(MAX_CACHE_CHARS / 2);
+      fetchMock.mockImplementation(() => Promise.resolve(new Response(big, { status: 200 })));
+      const fetchText = (position: number) =>
+        makeSejmRequest(`/acts/DU/1964/${position}/text.html`, undefined, { api: "eli", format: "html" });
+
+      await fetchText(1);
+      await fetchText(2);
+      await fetchText(1);
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+
+      // A third text pushes out the one stored first; fetching that again pushes out the next.
+      await fetchText(3);
+      await fetchText(2);
+      expect(fetchMock).toHaveBeenCalledTimes(3);
+      await fetchText(1);
+      expect(fetchMock).toHaveBeenCalledTimes(4);
+      await fetchText(3);
+      expect(fetchMock).toHaveBeenCalledTimes(4);
+      await fetchText(2);
+      expect(fetchMock).toHaveBeenCalledTimes(5);
     });
 
     it("always fetches resources that change often", async () => {
