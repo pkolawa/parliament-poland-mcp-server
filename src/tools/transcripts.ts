@@ -34,7 +34,7 @@ export const getTranscriptsTool = {
       content: [
         {
           type: "text" as const,
-          text: `Fetched the transcript statements for sitting ${proceeding} on ${date} in term ${term}:\n\n${JSON.stringify(transcripts.data, null, 2)}`,
+          text: `${transcripts.notice ?? ""}Fetched the transcript statements for sitting ${proceeding} on ${date} in term ${term}:\n\n${JSON.stringify(transcripts.data, null, 2)}`,
         },
       ],
     };

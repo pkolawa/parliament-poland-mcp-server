@@ -33,7 +33,7 @@ export const getPrintsTool = {
       content: [
         {
           type: "text" as const,
-          text: `Fetched the list of prints for term ${term}:\n\n${JSON.stringify(prints.data, null, 2)}`,
+          text: `${prints.notice ?? ""}Fetched the list of prints for term ${term}:\n\n${JSON.stringify(prints.data, null, 2)}`,
         },
       ],
     };
@@ -68,7 +68,7 @@ export const getPrintTool = {
       content: [
         {
           type: "text" as const,
-          text: `Fetched details for print ${printNumber} in term ${term}:\n\n${JSON.stringify(print.data, null, 2)}`,
+          text: `${print.notice ?? ""}Fetched details for print ${printNumber} in term ${term}:\n\n${JSON.stringify(print.data, null, 2)}`,
         },
       ],
     };

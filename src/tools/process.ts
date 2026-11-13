@@ -33,7 +33,7 @@ export const getProcessTool = {
       content: [
         {
           type: "text" as const,
-          text: `Fetched process ${processNumber} for term ${term}:\n\n${JSON.stringify(
+          text: `${process.notice ?? ""}Fetched process ${processNumber} for term ${term}:\n\n${JSON.stringify(
             process.data,
             null,
             2

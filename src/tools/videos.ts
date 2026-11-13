@@ -32,7 +32,7 @@ export const getVideosTool = {
       content: [
         {
           type: "text" as const,
-          text: `Fetched the list of video recordings for term ${term}:\n\n${JSON.stringify(videos.data, null, 2)}`,
+          text: `${videos.notice ?? ""}Fetched the list of video recordings for term ${term}:\n\n${JSON.stringify(videos.data, null, 2)}`,
         },
       ],
     };

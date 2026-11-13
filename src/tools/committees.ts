@@ -32,7 +32,7 @@ export const getCommitteesTool = {
       content: [
         {
           type: "text" as const,
-          text: `Fetched the list of committees for term ${term}:\n\n${JSON.stringify(committees.data, null, 2)}`,
+          text: `${committees.notice ?? ""}Fetched the list of committees for term ${term}:\n\n${JSON.stringify(committees.data, null, 2)}`,
         },
       ],
     };
@@ -67,7 +67,7 @@ export const getCommitteeTool = {
       content: [
         {
           type: "text" as const,
-          text: `Fetched details for committee ${id} in term ${term}:\n\n${JSON.stringify(committee.data, null, 2)}`,
+          text: `${committee.notice ?? ""}Fetched details for committee ${id} in term ${term}:\n\n${JSON.stringify(committee.data, null, 2)}`,
         },
       ],
     };

@@ -40,7 +40,7 @@ export const getInterpellationsTool = {
       content: [
         {
           type: "text" as const,
-          text: `Fetched the list of interpellations for term ${term}:\n\n${JSON.stringify(interpellations.data, null, 2)}`,
+          text: `${interpellations.notice ?? ""}Fetched the list of interpellations for term ${term}:\n\n${JSON.stringify(interpellations.data, null, 2)}`,
         },
       ],
     };
@@ -75,7 +75,7 @@ export const getInterpellationTool = {
       content: [
         {
           type: "text" as const,
-          text: `Fetched details for interpellation ${id} in term ${term}:\n\n${JSON.stringify(interpellation.data, null, 2)}`,
+          text: `${interpellation.notice ?? ""}Fetched details for interpellation ${id} in term ${term}:\n\n${JSON.stringify(interpellation.data, null, 2)}`,
         },
       ],
     };

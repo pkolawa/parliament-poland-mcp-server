@@ -28,7 +28,7 @@ export const getTermsTool = {
       content: [
         {
           type: "text" as const,
-          text: `Fetched the list of Sejm terms:\n\n${JSON.stringify(terms.data, null, 2)}`,
+          text: `${terms.notice ?? ""}Fetched the list of Sejm terms:\n\n${JSON.stringify(terms.data, null, 2)}`,
         },
       ],
     };

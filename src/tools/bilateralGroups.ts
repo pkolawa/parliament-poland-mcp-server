@@ -27,7 +27,7 @@ export const getBilateralGroupsTool = {
       content: [
         {
           type: "text" as const,
-          text: `Fetched the list of bilateral groups for term ${term}:\n\n${JSON.stringify(
+          text: `${groups.notice ?? ""}Fetched the list of bilateral groups for term ${term}:\n\n${JSON.stringify(
             groups.data,
             null,
             2

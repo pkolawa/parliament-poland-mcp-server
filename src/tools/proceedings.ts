@@ -32,7 +32,7 @@ export const getProceedingsTool = {
       content: [
         {
           type: "text" as const,
-          text: `Fetched the list of proceedings for term ${term}:\n\n${JSON.stringify(proceedings.data, null, 2)}`,
+          text: `${proceedings.notice ?? ""}Fetched the list of proceedings for term ${term}:\n\n${JSON.stringify(proceedings.data, null, 2)}`,
         },
       ],
     };

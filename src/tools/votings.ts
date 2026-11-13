@@ -33,7 +33,7 @@ export const getVotingsTool = {
       content: [
         {
           type: "text" as const,
-          text: `Fetched the list of votings for term ${term}:\n\n${JSON.stringify(votings.data, null, 2)}`,
+          text: `${votings.notice ?? ""}Fetched the list of votings for term ${term}:\n\n${JSON.stringify(votings.data, null, 2)}`,
         },
       ],
     };

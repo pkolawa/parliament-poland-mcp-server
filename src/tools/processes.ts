@@ -32,7 +32,7 @@ export const getProcessesTool = {
       content: [
         {
           type: "text" as const,
-          text: `Fetched the list of processes for term ${term}:\n\n${JSON.stringify(processes.data, null, 2)}`,
+          text: `${processes.notice ?? ""}Fetched the list of processes for term ${term}:\n\n${JSON.stringify(processes.data, null, 2)}`,
         },
       ],
     };

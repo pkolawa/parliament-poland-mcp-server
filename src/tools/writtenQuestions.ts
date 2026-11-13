@@ -39,7 +39,7 @@ export const getWrittenQuestionsTool = {
       content: [
         {
           type: "text" as const,
-          text: `Fetched the list of written questions for term ${term}:\n\n${JSON.stringify(writtenQuestions.data, null, 2)}`,
+          text: `${writtenQuestions.notice ?? ""}Fetched the list of written questions for term ${term}:\n\n${JSON.stringify(writtenQuestions.data, null, 2)}`,
         },
       ],
     };

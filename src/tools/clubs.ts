@@ -32,7 +32,7 @@ export const getClubsTool = {
       content: [
         {
           type: "text" as const,
-          text: `Fetched the list of clubs for term ${term}:\n\n${JSON.stringify(clubs.data, null, 2)}`,
+          text: `${clubs.notice ?? ""}Fetched the list of clubs for term ${term}:\n\n${JSON.stringify(clubs.data, null, 2)}`,
         },
       ],
     };
@@ -67,7 +67,7 @@ export const getClubTool = {
       content: [
         {
           type: "text" as const,
-          text: `Fetched details for club ${id} in term ${term}:\n\n${JSON.stringify(club.data, null, 2)}`,
+          text: `${club.notice ?? ""}Fetched details for club ${id} in term ${term}:\n\n${JSON.stringify(club.data, null, 2)}`,
         },
       ],
     };
