@@ -53,7 +53,16 @@ if (resultsPath && existsSync(resultsPath)) {
   });
 
   if (failures.length > 0) {
-    lines.push("<details><summary>Failures</summary>", "", ...failures, "", "</details>", "");
+    lines.push(
+      "<details><summary>Failures</summary>",
+      "",
+      ...failures,
+      "",
+      "</details>",
+      "",
+      "API errors such as `HTTP 503` are logged by the client, so they appear in the job log rather than here.",
+      ""
+    );
     warn(`${failures.length} live API test(s) failed. See the job summary for details.`);
   }
 } else {
