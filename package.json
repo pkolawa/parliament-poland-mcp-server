@@ -7,6 +7,7 @@
   "scripts": {
     "test": "jest",
     "test:live-api": "RUN_LIVE_API_TESTS=true jest --config jest.live.config.cjs --runInBand",
+    "test:smoke": "node scripts/smoke-test.mjs",
     "build": "npm run test && node build.mjs",
     "start": "node build/index.mjs",
     "prepublishOnly": "npm run build",
@@ -29,7 +30,7 @@
   },
   "license": "MIT",
   "engines": {
-    "node": ">=18"
+    "node": ">=22"
   },
   "files": [
     "build/index.mjs"
@@ -43,15 +44,15 @@
   },
   "homepage": "https://github.com/pkolawa/parliament-poland-mcp-server#readme",
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.32.1",
-    "zod": "^3.25.76"
+    "@modelcontextprotocol/sdk": "^1.32.2",
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@types/jest": "^30.0.0",
-    "@types/node": "^24.3.1",
-    "esbuild": "^0.25.9",
+    "@types/node": "^22.20.5",
+    "esbuild": "^0.28.2",
     "jest": "^30.5.2",
-    "ts-jest": "^29.4.14",
-    "typescript": "^5.9.2"
+    "ts-jest": "^29.4.15",
+    "typescript": "^5.9.3"
   }
 }

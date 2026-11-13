@@ -8,7 +8,7 @@ const buildOptions = {
   entryPoints: ['src/index.ts'],
   bundle: true,
   platform: 'node',
-  target: 'node16',
+  target: 'node22',
   outfile: 'build/index.mjs',
   format: 'esm',
   external: ['@modelcontextprotocol/sdk'],
