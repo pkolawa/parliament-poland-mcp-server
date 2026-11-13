@@ -72,17 +72,50 @@ describe("MCP protocol", () => {
   it("returns structured content that passes the output schema of a list tool", async () => {
     makeSejmRequestMock.mockResolvedValue({
       ok: true,
-      data: [{ id: 1, firstLastName: "Jan Kowalski", club: "KO", active: true, extra: { any: "field" } }],
+      data: [{ id: "KO", name: "Klub Parlamentarny Koalicja Obywatelska", extra: { any: "field" } }],
       notice: "Note: cached.\n\n",
     });
 
-    const result = await client.callTool({ name: "get-members", arguments: { term: 10 } });
+    const result = await client.callTool({ name: "get-clubs", arguments: { term: 10 } });
 
     expect(result.isError).toBeFalsy();
     expect(result.structuredContent).toEqual({
-      items: [{ id: 1, firstLastName: "Jan Kowalski", club: "KO", active: true, extra: { any: "field" } }],
+      total: 1,
+      offset: 0,
+      items: [{ id: "KO", name: "Klub Parlamentarny Koalicja Obywatelska", extra: { any: "field" } }],
       notice: "Note: cached.",
     });
+  });
+
+  it("returns a filtered page that passes the output schema of get-members", async () => {
+    makeSejmRequestMock.mockResolvedValue({
+      ok: true,
+      data: [
+        { id: 1, firstLastName: "Jan Kowalski", club: "KO", active: true, profession: "prawnik" },
+        { id: 2, firstLastName: "Anna Nowak", club: "KO", active: true },
+        { id: 3, firstLastName: "Piotr Wiśniewski", club: "PiS", active: true },
+      ],
+    });
+
+    const result = await client.callTool({
+      name: "get-members",
+      arguments: { term: 10, club: "KO", limit: 1, fields: ["profession"] },
+    });
+
+    expect(result.isError).toBeFalsy();
+    expect(result.structuredContent).toEqual({
+      total: 2,
+      offset: 0,
+      nextOffset: 1,
+      items: [{ id: 1, firstLastName: "Jan Kowalski", club: "KO", active: true, profession: "prawnik" }],
+    });
+  });
+
+  it("rejects an unknown extra field of get-members", async () => {
+    const result = await client.callTool({ name: "get-members", arguments: { term: 10, fields: ["password"] } });
+
+    expect(result.isError).toBe(true);
+    expect(makeSejmRequestMock).not.toHaveBeenCalled();
   });
 
   it("returns structured content that passes the output schema of a transformed object", async () => {

@@ -4,6 +4,9 @@ import { buildToolResponse, defineTool, listOutput, objectOutput, withTerm } fro
 import { PrintSchema, type Print } from "../types/api.js";
 import { limit, offset, printNumber, term } from "./params.js";
 
+/** Prints returned by get-prints per page unless `limit` says otherwise. */
+export const PRINT_PAGE_SIZE = 50;
+
 export const getPrintsTool = defineTool({
   title: "List prints",
   description:
@@ -18,15 +21,18 @@ export const getPrintsTool = defineTool({
       .optional()
       .describe("Field to sort by, e.g. documentDate; prefix with - for descending order (e.g. -changeDate for the most recently changed)"),
     offset: offset(),
-    limit: limit(),
+    limit: limit(PRINT_PAGE_SIZE),
   },
   outputSchema: listOutput(PrintSchema),
-  handler: ({ term, offset, limit, sort_by }) =>
+  handler: ({ term, offset = 0, limit = PRINT_PAGE_SIZE, sort_by }) =>
     withTerm(term, async (term) =>
       buildToolResponse(
         await makeSejmRequest<Print[]>(`/term${term}/prints`, { offset, limit, sort_by }),
         `Fetched the list of prints for term ${term}:`,
-        `Failed to fetch the list of prints for term ${term}.`
+        `Failed to fetch the list of prints for term ${term}.`,
+        // The API documents no offset or limit for this list. A term has thousands of prints, so if it
+        // ignores them and returns the whole list, paginate here instead of returning megabytes.
+        (prints) => (prints.length > limit ? prints.slice(offset, offset + limit) : prints)
       )
     ),
 });

@@ -27,6 +27,10 @@ export const limit = (defaultLimit = 50) =>
     .optional()
     .describe(`Maximum number of items to return; defaults to ${defaultLimit}`);
 
+/** `limit` of a short list that is returned whole unless the caller asks for less. */
+export const limitOrAll = () =>
+  z.number().int().positive().optional().describe("Maximum number of items to return; all by default");
+
 export const date = (description: string) =>
   z.string().regex(DATE, "Expected a date in YYYY-MM-DD format").describe(`${description}, in YYYY-MM-DD format`);
 

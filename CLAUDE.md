@@ -55,6 +55,8 @@ esbuild bundles everything into a single `build/index.mjs` with `#!/usr/bin/env 
 - `term` is optional in every tool (`term()` from `params.ts`) and resolved with `withTerm`
 - Descriptions are written for LLMs: explain Polish terms (posiedzenie, druk, klub…), date formats and which tool provides each ID
 - JSON tools declare an `outputSchema`; plain-text tools (`get-statement`, `get-interpellation-text`) do not
+- Lists the API returns whole (no documented `offset`/`limit`) are fetched without them and filtered and paginated in the transform with `paginate` (output schema `pagedListOutput`, message from `describePage`); text filters use `wordMatcher` from `src/utils/text.ts`, which ignores case and Polish diacritics
+- In a `buildToolResponse` call whose success message is a function, type the transform's parameter (e.g. `(mps: Mp[]) => paginate(...)`), otherwise TypeScript infers the message's argument as the untransformed data
 - Output schemas stay lenient (optional, nullable, passthrough): a stricter schema makes the SDK reject live responses
 
 @TODO.md

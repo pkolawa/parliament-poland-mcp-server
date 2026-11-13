@@ -24,17 +24,15 @@ beforeEach(() => {
 
 describe("getProceedingsTool", () => {
   it("returns a success message with data", async () => {
-    makeSejmRequestMock.mockResolvedValue({ ok: true, data: [{ number: 1 }] });
+    makeSejmRequestMock.mockResolvedValue({ ok: true, data: [{ number: 1 }, { number: 2 }, { number: 3 }] });
 
-    const result = await getProceedingsTool.handler({ term: 10, offset: 1, limit: 2 });
+    const result = await getProceedingsTool.handler({ term: 10, offset: 1, limit: 1 });
 
-    expect(makeSejmRequestMock).toHaveBeenCalledWith("/term10/proceedings", {
-      offset: 1,
-      limit: 2,
-    });
+    expect(makeSejmRequestMock).toHaveBeenCalledWith("/term10/proceedings");
     expect(result.content[0].text).toContain(
-      "Fetched the list of proceedings for term 10:"
+      "Fetched 1 of 3 plenary sittings of term 10 (offset 1; pass offset=2 for the next page):"
     );
+    expect(result.structuredContent).toMatchObject({ total: 3, items: [{ number: 2 }] });
   });
 
   it("leaves out the agendas and schedules", async () => {
@@ -56,6 +54,8 @@ describe("getProceedingsTool", () => {
     const result = await getProceedingsTool.handler({ term: 10 });
 
     expect(result.structuredContent).toEqual({
+      total: 3,
+      offset: 0,
       items: [
         { number: 1, title: "1. Posiedzenie Sejmu", dates: ["2023-11-13"], current: false },
         { number: 0, title: "Planowane Posiedzenie Sejmu", dates: ["2027-01-13"], current: false },

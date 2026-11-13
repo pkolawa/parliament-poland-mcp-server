@@ -1,8 +1,16 @@
 import { z } from "zod";
 import { makeSejmRequest } from "../utils/api.js";
-import { buildToolResponse, defineTool, listOutput, objectOutput, withTerm } from "../utils/tool.js";
+import {
+  buildToolResponse,
+  defineTool,
+  describePage,
+  objectOutput,
+  pagedListOutput,
+  paginate,
+  withTerm,
+} from "../utils/tool.js";
 import { ClubSchema, type Club } from "../types/api.js";
-import { limit, offset, term } from "./params.js";
+import { limitOrAll, offset, term } from "./params.js";
 
 export const getClubsTool = defineTool({
   title: "List clubs",
@@ -13,15 +21,17 @@ export const getClubsTool = defineTool({
   schema: {
     term: term(),
     offset: offset(),
-    limit: limit(),
+    limit: limitOrAll(),
   },
-  outputSchema: listOutput(ClubSchema),
+  outputSchema: pagedListOutput(ClubSchema),
+  // The API documents no offset or limit for this list, so it is paginated here.
   handler: ({ term, offset, limit }) =>
     withTerm(term, async (term) =>
       buildToolResponse(
-        await makeSejmRequest<Club[]>(`/term${term}/clubs`, { offset, limit }),
-        `Fetched the list of clubs for term ${term}:`,
-        `Failed to fetch the list of clubs for term ${term}.`
+        await makeSejmRequest<Club[]>(`/term${term}/clubs`),
+        (page) => `Fetched ${describePage(page, `clubs of term ${term}`)}:`,
+        `Failed to fetch the list of clubs for term ${term}.`,
+        (clubs: Club[]) => paginate(clubs, offset, limit)
       )
     ),
 });

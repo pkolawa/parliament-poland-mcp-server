@@ -1,6 +1,6 @@
 import { jest } from "@jest/globals";
 import { makeSejmRequest } from "../../src/utils/api.js";
-import { getPrintTool, getPrintsTool } from "../../src/tools/prints.js";
+import { PRINT_PAGE_SIZE, getPrintTool, getPrintsTool } from "../../src/tools/prints.js";
 
 type MakeSejmRequestFn = (
   endpoint: string,
@@ -32,6 +32,35 @@ describe("getPrintsTool", () => {
     expect(result.content[0].text).toContain(
       "Fetched the list of prints for term 10:"
     );
+  });
+
+  it(`asks the API for ${PRINT_PAGE_SIZE} prints by default`, async () => {
+    makeSejmRequestMock.mockResolvedValue({ ok: true, data: [{ number: "1" }] });
+
+    await getPrintsTool.handler({ term: 10 });
+
+    expect(makeSejmRequestMock).toHaveBeenCalledWith("/term10/prints", {
+      offset: 0,
+      limit: PRINT_PAGE_SIZE,
+      sort_by: undefined,
+    });
+  });
+
+  it("paginates the list itself when the API ignores offset and limit", async () => {
+    const all = Array.from({ length: 10 }, (_, i) => ({ number: String(i + 1) }));
+    makeSejmRequestMock.mockResolvedValue({ ok: true, data: all });
+
+    const result = await getPrintsTool.handler({ term: 10, offset: 4, limit: 3 });
+
+    expect(result.structuredContent).toEqual({ items: [{ number: "5" }, { number: "6" }, { number: "7" }] });
+  });
+
+  it("keeps a page that the API already paginated", async () => {
+    makeSejmRequestMock.mockResolvedValue({ ok: true, data: [{ number: "5" }, { number: "6" }] });
+
+    const result = await getPrintsTool.handler({ term: 10, offset: 4, limit: 3 });
+
+    expect(result.structuredContent).toEqual({ items: [{ number: "5" }, { number: "6" }] });
   });
 
   it("returns a failure message when the API fails", async () => {

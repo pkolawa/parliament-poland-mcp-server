@@ -1,8 +1,16 @@
 import { makeSejmRequest } from "../utils/api.js";
 import { htmlToText } from "../utils/html.js";
-import { buildToolResponse, defineTool, listOutput, objectOutput, withTerm } from "../utils/tool.js";
+import {
+  buildToolResponse,
+  defineTool,
+  describePage,
+  objectOutput,
+  pagedListOutput,
+  paginate,
+  withTerm,
+} from "../utils/tool.js";
 import { ProceedingSchema, type Proceeding } from "../types/api.js";
-import { limit, offset, sitting, term } from "./params.js";
+import { limitOrAll, offset, sitting, term } from "./params.js";
 
 const HTML_FIELDS = ["agenda", "currentAffairs", "schedule", "votings"] as const;
 
@@ -38,16 +46,17 @@ export const getProceedingsTool = defineTool({
   schema: {
     term: term(),
     offset: offset(),
-    limit: limit(),
+    limit: limitOrAll(),
   },
-  outputSchema: listOutput(ProceedingSchema),
+  outputSchema: pagedListOutput(ProceedingSchema),
+  // The API documents no offset or limit for this list, so it is paginated here.
   handler: ({ term, offset, limit }) =>
     withTerm(term, async (term) =>
       buildToolResponse(
-        await makeSejmRequest<Proceeding[]>(`/term${term}/proceedings`, { offset, limit }),
-        `Fetched the list of proceedings for term ${term}:`,
+        await makeSejmRequest<Proceeding[]>(`/term${term}/proceedings`),
+        (page) => `Fetched ${describePage(page, `plenary sittings of term ${term}`)}:`,
         `Failed to fetch the list of proceedings for term ${term}.`,
-        (proceedings) => proceedings.map(withoutHtmlFields)
+        (proceedings: Proceeding[]) => paginate(proceedings.map(withoutHtmlFields), offset, limit)
       )
     ),
 });

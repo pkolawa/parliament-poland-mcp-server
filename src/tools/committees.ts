@@ -1,14 +1,23 @@
 import { z } from "zod";
 import { makeSejmRequest } from "../utils/api.js";
 import { htmlToText } from "../utils/html.js";
-import { buildToolResponse, defineTool, listOutput, objectOutput, withTerm } from "../utils/tool.js";
+import {
+  buildToolResponse,
+  defineTool,
+  describePage,
+  listOutput,
+  objectOutput,
+  pagedListOutput,
+  paginate,
+  withTerm,
+} from "../utils/tool.js";
 import {
   CommitteeSchema,
   CommitteeSittingSchema,
   type Committee,
   type CommitteeSitting,
 } from "../types/api.js";
-import { committeeCode, date, limit, offset, term } from "./params.js";
+import { committeeCode, date, limitOrAll, offset, term } from "./params.js";
 
 export const getCommitteesTool = defineTool({
   title: "List committees",
@@ -19,15 +28,17 @@ export const getCommitteesTool = defineTool({
   schema: {
     term: term(),
     offset: offset(),
-    limit: limit(),
+    limit: limitOrAll(),
   },
-  outputSchema: listOutput(CommitteeSchema),
+  outputSchema: pagedListOutput(CommitteeSchema),
+  // The API documents no offset or limit for this list, so it is paginated here.
   handler: ({ term, offset, limit }) =>
     withTerm(term, async (term) =>
       buildToolResponse(
-        await makeSejmRequest<Committee[]>(`/term${term}/committees`, { offset, limit }),
-        `Fetched the list of committees for term ${term}:`,
-        `Failed to fetch the list of committees for term ${term}.`
+        await makeSejmRequest<Committee[]>(`/term${term}/committees`),
+        (page) => `Fetched ${describePage(page, `committees of term ${term}`)}:`,
+        `Failed to fetch the list of committees for term ${term}.`,
+        (committees: Committee[]) => paginate(committees, offset, limit)
       )
     ),
 });

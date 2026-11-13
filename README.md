@@ -41,11 +41,12 @@ This configuration tells the client how to start the tool server.
 Every tool is read-only (`readOnlyHint: true`) and queries the public Sejm API (`openWorldHint: true`).
 `term` is optional in every tool and defaults to the current term of the Sejm.
 Tools that return data (all except the two text tools) declare an `outputSchema` and return the data as `structuredContent` too; lists come as `{ "items": [...] }`.
+Lists that the Sejm API returns whole (MPs, votings of a sitting, clubs, committees, plenary sittings, terms) are filtered and paginated by the server and come as `{ "total", "offset", "nextOffset", "items" }`, where `nextOffset` is absent on the last page.
 
 | Tool | What it returns |
 | --- | --- |
 | `get-terms` | Terms (kadencje) of the Sejm with their dates; the current one is the default `term` |
-| `get-members` | MPs (posłowie) of a term with their ID, club and district |
+| `get-members` | MPs (posłowie) of a term with their ID, club and district, filtered by club, name, district, voivodeship or active; 100 per page |
 | `get-member` | Details of one MP |
 | `get-mp-voting-stats` | An MP's attendance in votings for each sitting day |
 | `get-mp-votings` | How an MP voted in every voting on one sitting day |
@@ -71,7 +72,7 @@ Tools that return data (all except the two text tools) declare an `outputSchema`
 | `get-statement` | Text of one statement |
 | `get-videos` | Video transmissions of a term |
 | `get-videos-by-date` | Video transmissions of one day (today by default) |
-| `get-votings` | Votings of one plenary sitting |
+| `get-votings` | Votings of one plenary sitting, filtered by day or title; 50 per page |
 | `get-voting` | Result of one voting with a breakdown by club, optionally with each MP's vote |
 | `search-votings` | Votings found by title, sitting or date range |
 | `get-bilateral-groups` | Bilateral groups (parliamentary friendship groups) |
@@ -124,6 +125,9 @@ Version 2.0 makes the tools easier for LLMs to use and contains breaking changes
 - **`get-interpellations`** sends its filters to the API under the names the API supports, so `dateFrom`, `dateTo` and `mp` now actually filter the results. The `number`, `club` and `status` parameters, which the API never supported, are removed; use `get-interpellation` for a single interpellation and `delayed: true` for interpellations with an overdue answer. New parameters: `recipient`, `modifiedSince`, `delayed`.
 - **`get-written-questions`** accepts only an MP ID in `from` and gains `delayed`.
 - **`get-proceedings`** no longer returns the agenda and schedules of each sitting as HTML, which made the list about 700 KB; it returns the number, title, dates and `current` flag. The new **`get-proceeding`** tool returns one sitting with its agenda as plain text.
+- **`get-members`** returns 100 MPs per page with `id`, `firstLastName`, `club`, `districtNum`, `districtName`, `voivodeship` and `active` (about 14 KB instead of 240 KB for all 494 MPs of the 10th term). Ask for more fields with `fields` (e.g. `["profession", "birthDate"]`); `get-member` returns everything about one MP. New filters: `club`, `name` (ignores case and Polish diacritics), `active`, `district` (number or name) and `voivodeship`.
+- **`get-votings`** returns 50 votings per page (the 147 votings of the first sitting of the 10th term were 87 KB) without the PDF link and the term. New filters: `date` (a day of the sitting) and `title` (words in the title, topic or description). `search-votings` returns the same fields.
+- **Pagination of whole lists.** `offset` and `limit` of `get-members`, `get-votings`, `get-clubs`, `get-committees`, `get-proceedings` and `get-terms` are applied by the server, because the API does not document them for these lists. These tools now return `total` and `nextOffset` with the items. `get-clubs`, `get-committees`, `get-proceedings` and `get-terms` still return the whole list by default. `get-prints` returns 50 prints by default and paginates the list itself if the API returns more than `limit`.
 - **`get-print`** takes `printNumber` as a string, so additional prints such as `1070-A` can be fetched.
 - **`get-processes`** gains the `title` and `documentType` filters of `get-passed-processes`.
 - Parameters with a fixed format are validated: dates (`YYYY-MM-DD`), club IDs, print numbers and sort fields.

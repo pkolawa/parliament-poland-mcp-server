@@ -25,17 +25,13 @@ beforeEach(() => {
 
 describe("getCommitteesTool", () => {
   it("returns a success message with data", async () => {
-    makeSejmRequestMock.mockResolvedValue({ ok: true, data: [{ id: "KFP" }] });
+    makeSejmRequestMock.mockResolvedValue({ ok: true, data: [{ code: "ASW" }, { code: "KFP" }, { code: "OSZ" }] });
 
     const result = await getCommitteesTool.handler({ term: 10, offset: 1, limit: 2 });
 
-    expect(makeSejmRequestMock).toHaveBeenCalledWith("/term10/committees", {
-      offset: 1,
-      limit: 2,
-    });
-    expect(result.content[0].text).toContain(
-      "Fetched the list of committees for term 10:"
-    );
+    expect(makeSejmRequestMock).toHaveBeenCalledWith("/term10/committees");
+    expect(result.content[0].text).toContain("Fetched 2 of 3 committees of term 10 (offset 1; last page):");
+    expect(result.structuredContent).toEqual({ total: 3, offset: 1, items: [{ code: "KFP" }, { code: "OSZ" }] });
   });
 
   it("returns a failure message when the API fails", async () => {

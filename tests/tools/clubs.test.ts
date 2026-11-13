@@ -19,18 +19,26 @@ beforeEach(() => {
 });
 
 describe("getClubsTool", () => {
-  it("returns a success message with data", async () => {
-    makeSejmRequestMock.mockResolvedValue({ ok: true, data: [{ id: "KO" }] });
+  it("returns all clubs by default", async () => {
+    makeSejmRequestMock.mockResolvedValue({ ok: true, data: [{ id: "KO" }, { id: "PiS" }] });
 
-    const result = await getClubsTool.handler({ term: 10, offset: 1, limit: 2 });
+    const result = await getClubsTool.handler({ term: 10 });
 
-    expect(makeSejmRequestMock).toHaveBeenCalledWith("/term10/clubs", {
-      offset: 1,
-      limit: 2,
-    });
+    expect(makeSejmRequestMock).toHaveBeenCalledWith("/term10/clubs");
+    expect(result.content[0].text).toContain("Fetched 2 clubs of term 10:");
+    expect(result.structuredContent).toEqual({ total: 2, offset: 0, items: [{ id: "KO" }, { id: "PiS" }] });
+  });
+
+  it("paginates the list itself instead of passing offset and limit to the API", async () => {
+    makeSejmRequestMock.mockResolvedValue({ ok: true, data: [{ id: "KO" }, { id: "PiS" }, { id: "Lewica" }] });
+
+    const result = await getClubsTool.handler({ term: 10, offset: 1, limit: 1 });
+
+    expect(makeSejmRequestMock).toHaveBeenCalledWith("/term10/clubs");
     expect(result.content[0].text).toContain(
-      "Fetched the list of clubs for term 10:"
+      "Fetched 1 of 3 clubs of term 10 (offset 1; pass offset=2 for the next page):"
     );
+    expect(result.structuredContent).toEqual({ total: 3, offset: 1, nextOffset: 2, items: [{ id: "PiS" }] });
   });
 
   it("returns a failure message when the API fails", async () => {

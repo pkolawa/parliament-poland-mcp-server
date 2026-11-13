@@ -1,6 +1,13 @@
 import { jest } from "@jest/globals";
 import { makeSejmRequest } from "../../src/utils/api.js";
-import { buildToolResponse, resolveTerm, withTerm } from "../../src/utils/tool.js";
+import {
+  buildToolResponse,
+  describeFilters,
+  describePage,
+  paginate,
+  resolveTerm,
+  withTerm,
+} from "../../src/utils/tool.js";
 import { getMpsTool } from "../../src/tools/mps.js";
 
 type MakeSejmRequestFn = (endpoint: string, params?: Record<string, unknown>) => Promise<unknown>;
@@ -148,7 +155,51 @@ describe("tools without a term", () => {
     const result = await getMpsTool.handler({ limit: 1 });
 
     expect(makeSejmRequestMock).toHaveBeenNthCalledWith(1, "/term");
-    expect(makeSejmRequestMock).toHaveBeenNthCalledWith(2, "/term10/MP", { offset: undefined, limit: 1 });
-    expect(result.content[0].text).toContain("Fetched the list of MPs for term 10:");
+    expect(makeSejmRequestMock).toHaveBeenNthCalledWith(2, "/term10/MP");
+    expect(result.content[0].text).toContain("Fetched 1 MPs of term 10:");
+  });
+});
+
+describe("paginate", () => {
+  const items = [1, 2, 3, 4, 5];
+
+  it("returns one page with the total and the offset of the next page", () => {
+    expect(paginate(items, 0, 2)).toEqual({ total: 5, offset: 0, nextOffset: 2, items: [1, 2] });
+    expect(paginate(items, 2, 2)).toEqual({ total: 5, offset: 2, nextOffset: 4, items: [3, 4] });
+  });
+
+  it("leaves out nextOffset on the last page", () => {
+    expect(paginate(items, 4, 2)).toEqual({ total: 5, offset: 4, items: [5] });
+    expect(paginate(items, 3, 2)).toEqual({ total: 5, offset: 3, items: [4, 5] });
+  });
+
+  it("returns everything from the offset when there is no limit", () => {
+    expect(paginate(items)).toEqual({ total: 5, offset: 0, items });
+    expect(paginate(items, 3)).toEqual({ total: 5, offset: 3, items: [4, 5] });
+  });
+
+  it("returns no items past the end of the list", () => {
+    expect(paginate(items, 10, 2)).toEqual({ total: 5, offset: 10, items: [] });
+  });
+});
+
+describe("describePage", () => {
+  it("says how much of the list the page holds and how to get the next page", () => {
+    expect(describePage(paginate([1, 2, 3], 0, 2), "MPs")).toBe(
+      "2 of 3 MPs (offset 0; pass offset=2 for the next page)"
+    );
+    expect(describePage(paginate([1, 2, 3], 2, 2), "MPs")).toBe("1 of 3 MPs (offset 2; last page)");
+    expect(describePage(paginate([1, 2, 3], 0, 5), "MPs")).toBe("3 MPs");
+    expect(describePage(paginate([], 0, 5), "MPs")).toBe("no MPs");
+    expect(describePage(paginate([1, 2, 3], 5, 5), "MPs")).toBe(
+      "0 of 3 MPs (offset 5 is past the end of the list)"
+    );
+  });
+});
+
+describe("describeFilters", () => {
+  it("lists the filters that are set", () => {
+    expect(describeFilters({ club: "KO", name: undefined, active: false })).toBe(" matching club=KO, active=false");
+    expect(describeFilters({ club: undefined })).toBe("");
   });
 });

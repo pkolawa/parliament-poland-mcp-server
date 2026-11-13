@@ -1,30 +1,80 @@
 import { z } from "zod";
 import { makeSejmRequest } from "../utils/api.js";
-import { buildToolResponse, defineTool, listOutput, objectOutput, withTerm } from "../utils/tool.js";
+import { wordMatcher } from "../utils/text.js";
+import {
+  buildToolResponse,
+  defineTool,
+  describeFilters,
+  describePage,
+  listOutput,
+  objectOutput,
+  pagedListOutput,
+  paginate,
+  withTerm,
+} from "../utils/tool.js";
 import { VotingResultSchema, VotingSchema, type Voting, type VotingDetails } from "../types/api.js";
 import { date, limit, offset, sitting, term, title } from "./params.js";
+
+/** Votings returned by get-votings per page unless `limit` says otherwise. */
+export const VOTING_PAGE_SIZE = 50;
+
+/** Leaves out the link to the PDF with the results and the term, which the caller passed. */
+function summarizeVoting({ links: _links, term: _term, ...voting }: Voting): Voting {
+  return voting;
+}
 
 export const getVotingsTool = defineTool({
   title: "List votings of a sitting",
   description:
-    "List all votings (głosowania) held during one plenary sitting, with voting number, day, time, title, topic, " +
-    "kind, required majority and the number of YES, NO and ABSTAIN votes. " +
+    "List the votings (głosowania) held during one plenary sitting (posiedzenie), in order, with voting number, " +
+    "date and time, title, topic, kind, required majority and the number of YES, NO and ABSTAIN votes. " +
+    `A sitting often has over a hundred votings, so they are returned ${VOTING_PAGE_SIZE} per page; ` +
+    "narrow them to one day of the sitting with date, or by subject with title. " +
     "Get the breakdown by club with get-voting; find votings across sittings with search-votings.",
   schema: {
     term: term(),
     proceeding: sitting(),
+    date: date("Only votings held on this day of the sitting (one of its `dates` in get-proceedings)").optional(),
+    title: z
+      .string()
+      .min(1)
+      .optional()
+      .describe(
+        "Only votings whose title, topic or description contains all these words, in Polish, e.g. budżet or " +
+          "poprawka; case and diacritics are ignored, and a stem such as podatk also matches podatku and podatkowy"
+      ),
     offset: offset(),
-    limit: limit(),
+    limit: limit(VOTING_PAGE_SIZE),
   },
-  outputSchema: listOutput(VotingSchema),
-  handler: ({ term, proceeding, offset, limit }) =>
-    withTerm(term, async (term) =>
-      buildToolResponse(
-        await makeSejmRequest<Voting[]>(`/term${term}/votings/${proceeding}`, { offset, limit }),
-        `Fetched the list of votings for term ${term}:`,
-        `Failed to fetch the list of votings for term ${term}.`
-      )
-    ),
+  outputSchema: pagedListOutput(VotingSchema),
+  handler: ({ term, proceeding, date, title, offset, limit = VOTING_PAGE_SIZE }) =>
+    withTerm(term, async (term) => {
+      // The API returns every voting of the sitting (about 600 bytes each) and has no filters or pagination.
+      const result = await makeSejmRequest<Voting[]>(`/term${term}/votings/${proceeding}`);
+      const titleMatches = title ? wordMatcher(title) : undefined;
+      const noun = `votings of sitting ${proceeding} in term ${term}${describeFilters({ date, title })}`;
+      return buildToolResponse(
+        result,
+        (page) => {
+          const days = result.ok ? [...new Set(result.data.map((v) => v.date?.slice(0, 10)).filter(Boolean))] : [];
+          const hint = page.total === 0 && date && days.length ? ` (days with votings: ${days.join(", ")})` : "";
+          return `Fetched ${describePage(page, noun)}${hint}:`;
+        },
+        `Failed to fetch the list of votings for term ${term}.`,
+        (votings: Voting[]) =>
+          paginate(
+            votings
+              .filter(
+                (v) =>
+                  (!date || v.date?.startsWith(date)) &&
+                  (!titleMatches || titleMatches(v.title, v.topic, v.description))
+              )
+              .map(summarizeVoting),
+            offset,
+            limit
+          )
+      );
+    }),
 });
 
 export const getVotingTool = defineTool({
@@ -104,7 +154,8 @@ export const searchVotingsTool = defineTool({
           limit,
         }),
         (votings) => `Found ${votings.length} votings in term ${term}:`,
-        `Failed to search votings in term ${term}.`
+        `Failed to search votings in term ${term}.`,
+        (votings) => votings.map(summarizeVoting)
       )
     ),
 });

@@ -43,6 +43,66 @@ export function objectOutput(schema: ObjectSchema): ObjectSchema {
   return schema.extend({ notice });
 }
 
+/**
+ * One page of a list that the server paginates itself, because the Sejm API returns the whole list
+ * and ignores (or does not document) `offset` and `limit`.
+ */
+export interface Page<T> {
+  /** Number of matching items on all pages. */
+  total: number;
+  offset: number;
+  /** Offset of the next page; absent on the last page. */
+  nextOffset?: number;
+  items: T[];
+}
+
+/** Returns `limit` items starting at `offset`, or all items from `offset` when `limit` is undefined. */
+export function paginate<T>(items: T[], offset = 0, limit?: number): Page<T> {
+  const end = limit === undefined ? items.length : offset + limit;
+  return {
+    total: items.length,
+    offset,
+    ...(end < items.length ? { nextOffset: end } : {}),
+    items: items.slice(offset, end),
+  };
+}
+
+/** Output schema of a tool that returns a `Page`. */
+export function pagedListOutput(item: z.ZodType): ObjectSchema {
+  return z.object({
+    total: z.number().describe("Number of matching items on all pages"),
+    offset: z.number().describe("Number of matching items skipped before this page"),
+    nextOffset: z.number().optional().describe("Pass as `offset` to get the next page; absent on the last page"),
+    items: z.array(item),
+    notice,
+  });
+}
+
+/**
+ * Describes which part of a list a page is, e.g. "50 of 147 votings (offset 0; pass offset=50 for
+ * the next page)", so the model knows the list is incomplete and how to get the rest.
+ */
+export function describePage(page: Page<unknown>, noun: string): string {
+  const { total, offset, nextOffset, items } = page;
+  if (total === 0) {
+    return `no ${noun}`;
+  }
+  if (items.length === total) {
+    return `${total} ${noun}`;
+  }
+  if (items.length === 0) {
+    return `0 of ${total} ${noun} (offset ${offset} is past the end of the list)`;
+  }
+  const next = nextOffset === undefined ? "last page" : `pass offset=${nextOffset} for the next page`;
+  return `${items.length} of ${total} ${noun} (offset ${offset}; ${next})`;
+}
+
+/** " matching club=KO, active=true" for the filters that are set, or "" when none is. */
+export function describeFilters(filters: Record<string, string | number | boolean | undefined>): string {
+  const set = Object.entries(filters).filter(([, value]) => value !== undefined);
+  return set.length ? ` matching ${set.map(([key, value]) => `${key}=${value}`).join(", ")}` : "";
+}
+
 export function errorResponse(failure: string, message: string): ToolResponse {
   return {
     content: [{ type: "text", text: `${failure}\n\nError: ${message}` }],
