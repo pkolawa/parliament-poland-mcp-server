@@ -391,7 +391,8 @@ liveDescribe("Sejm API live integration", () => {
       "get-club": { term: 10, id: "KO" },
       "get-committees": { term: 10 },
       "get-committee": { term: 10, id: "ASW" },
-      "get-committee-sittings": { term: 10, code: "ASW", dateTo: "2023-11-30" },
+      // Up to 2024-03-31: 7 sittings, enough for the offset and limit check.
+      "get-committee-sittings": { term: 10, code: "ASW", dateTo: "2024-03-31" },
       "get-committee-sitting": { term: 10, code: "ASW", num: 1 },
       "get-interpellations": { term: 10, limit: 3 },
       "get-interpellation": { term: 10, id: 10 },
