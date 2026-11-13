@@ -6,7 +6,7 @@ export const getPrintsTool = {
   description: "Get a list of prints for a given term",
   schema: {
     term: z.number().int().positive().describe("Term of the Sejm"),
-    offset: z.number().int().positive().optional().describe("Offset for pagination"),
+    offset: z.number().int().nonnegative().optional().describe("Offset for pagination"),
     limit: z.number().int().positive().optional().describe("Limit for pagination"),
     sort_by: z.string().optional().describe("Sort by a specific field."),
   },
@@ -33,7 +33,7 @@ export const getPrintsTool = {
       content: [
         {
           type: "text" as const,
-          text: `Fetched the list of prints for term ${term}:\n\n${JSON.stringify(prints.data, null, 2)}`,
+          text: `${prints.notice ?? ""}Fetched the list of prints for term ${term}:\n\n${JSON.stringify(prints.data, null, 2)}`,
         },
       ],
     };
@@ -68,7 +68,7 @@ export const getPrintTool = {
       content: [
         {
           type: "text" as const,
-          text: `Fetched details for print ${printNumber} in term ${term}:\n\n${JSON.stringify(print.data, null, 2)}`,
+          text: `${print.notice ?? ""}Fetched details for print ${printNumber} in term ${term}:\n\n${JSON.stringify(print.data, null, 2)}`,
         },
       ],
     };

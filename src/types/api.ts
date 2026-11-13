@@ -119,7 +119,14 @@ export interface Proceeding {
   title: string;
   current: boolean;
   dates: string[];
+  /** HTML. */
   agenda?: string;
+  /** HTML. */
+  currentAffairs?: string;
+  /** HTML. */
+  schedule?: string;
+  /** HTML. */
+  votings?: string;
 }
 
 export interface VotingOption {
@@ -149,6 +156,57 @@ export interface Voting {
   totalVoted: number;
   links: Link[];
   votingOptions?: VotingOption[];
+}
+
+export interface VotingVote {
+  MP: number;
+  club: string;
+  firstName: string;
+  lastName: string;
+  secondName?: string;
+  /** YES, NO, ABSTAIN, ABSENT; VOTE_VALID for votings on a list. */
+  vote: string;
+  /** Votes per option for votings on a list, keyed by option index. */
+  listVotes?: Record<string, string>;
+}
+
+export interface VotingDetails extends Voting {
+  votes: VotingVote[];
+}
+
+export interface VotingStat {
+  sitting: number;
+  date: string;
+  numVotings: number;
+  numVoted: number;
+  numMissed: number;
+  absenceExcuse: boolean;
+}
+
+export interface MpVote {
+  votingNumber: number;
+  date: string;
+  title: string;
+  topic?: string;
+  description?: string;
+  kind: string;
+  vote: string;
+  listVotes?: Record<string, string>;
+}
+
+export interface CommitteeSitting {
+  num: number;
+  code: string;
+  date: string;
+  startDateTime?: string;
+  endDateTime?: string;
+  status: string;
+  room?: string;
+  remote?: boolean;
+  closed?: boolean;
+  /** HTML. */
+  agenda?: string;
+  video?: Video[];
 }
 
 export interface LegislativeProcess {
@@ -187,11 +245,24 @@ export interface Video {
   otherVideoLinks?: string[];
 }
 
-export interface Transcript {
-  unid?: string;
-  title?: string;
-  date?: string;
-  [key: string]: unknown;
+export interface Statement {
+  /** 0 is always the course of the sitting. */
+  num: number;
+  name: string;
+  function: string;
+  /** MP id if the speaker is an MP, 0 otherwise. */
+  memberID: number;
+  rapporteur: boolean;
+  secretary: boolean;
+  unspoken: boolean;
+  startDateTime?: string;
+  endDateTime?: string;
+}
+
+export interface StatementList {
+  proceedingNum: number;
+  date: string;
+  statements: Statement[];
 }
 
 export interface WrittenQuestion {
@@ -208,8 +279,9 @@ export interface WrittenQuestion {
 }
 
 export interface BilateralGroup {
-  id?: string;
-  name?: string;
-  members?: unknown[];
+  id: number;
+  name: string;
+  engName?: string;
+  appointmentDate?: string;
   [key: string]: unknown;
 }

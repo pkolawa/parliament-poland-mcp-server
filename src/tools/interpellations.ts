@@ -1,12 +1,13 @@
 import { z } from "zod";
 import { makeSejmRequest } from "../utils/api.js";
+import { htmlToText } from "../utils/html.js";
 import type { Interpellation } from "../types/api.js";
 
 export const getInterpellationsTool = {
   description: "Get a list of interpellations for a given term",
   schema: {
     term: z.number().int().positive().describe("Term of the Sejm"),
-    offset: z.number().int().positive().optional().describe("Offset for pagination"),
+    offset: z.number().int().nonnegative().optional().describe("Offset for pagination"),
     limit: z.number().int().positive().optional().describe("Limit for pagination"),
     dateFrom: z.string().optional().describe("Search interpellations from a specific date."),
     dateTo: z.string().optional().describe("Search interpellations up to a specific date."),
@@ -40,7 +41,7 @@ export const getInterpellationsTool = {
       content: [
         {
           type: "text" as const,
-          text: `Fetched the list of interpellations for term ${term}:\n\n${JSON.stringify(interpellations.data, null, 2)}`,
+          text: `${interpellations.notice ?? ""}Fetched the list of interpellations for term ${term}:\n\n${JSON.stringify(interpellations.data, null, 2)}`,
         },
       ],
     };
@@ -75,7 +76,50 @@ export const getInterpellationTool = {
       content: [
         {
           type: "text" as const,
-          text: `Fetched details for interpellation ${id} in term ${term}:\n\n${JSON.stringify(interpellation.data, null, 2)}`,
+          text: `${interpellation.notice ?? ""}Fetched details for interpellation ${id} in term ${term}:\n\n${JSON.stringify(interpellation.data, null, 2)}`,
+        },
+      ],
+    };
+  },
+};
+
+export const getInterpellationTextTool = {
+  description: "Get the text of an interpellation or of a reply to it",
+  schema: {
+    term: z.number().int().positive().describe("Term of the Sejm"),
+    num: z.number().int().positive().describe("Number of the interpellation"),
+    replyKey: z
+      .string()
+      .regex(/^[A-Za-z0-9]+$/, "Expected a reply key such as CZLJNC")
+      .optional()
+      .describe("Key of a reply (replies[].key from get-interpellation); omit to get the interpellation itself. A reply with onlyAttachment=true has its content only in the attached PDF"),
+  },
+  handler: async (args: { term: number, num: number, replyKey?: string }) => {
+    const { term, num, replyKey } = args;
+    const subject = replyKey ? `reply ${replyKey} to interpellation ${num}` : `interpellation ${num}`;
+    const body = await makeSejmRequest<string>(
+      `/term${term}/interpellations/${num}${replyKey ? `/reply/${replyKey}` : ""}/body`,
+      undefined,
+      { format: "html" },
+    );
+
+    if (!body.ok) {
+      return {
+        content: [
+          {
+            type: "text" as const,
+            text: `Failed to fetch the text of ${subject} in term ${term}.\n\nError: ${body.error.message}`,
+          },
+        ],
+        isError: true,
+      };
+    }
+
+    return {
+      content: [
+        {
+          type: "text" as const,
+          text: `${body.notice ?? ""}Fetched the text of ${subject} in term ${term}:\n\n${htmlToText(body.data)}`,
         },
       ],
     };

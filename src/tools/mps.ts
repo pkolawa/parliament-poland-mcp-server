@@ -29,7 +29,7 @@ export const getMpTool = {
       content: [
         {
           type: "text" as const,
-          text: `Fetched information about the MP with ID ${id} in term ${term}:\n\n${JSON.stringify(mp.data, null, 2)}`,
+          text: `${mp.notice ?? ""}Fetched information about the MP with ID ${id} in term ${term}:\n\n${JSON.stringify(mp.data, null, 2)}`,
         },
       ],
     };
@@ -41,7 +41,7 @@ export const getMpsTool = {
   description: "Get a list of MPs for a given term",
   schema: {
     term: z.number().int().positive().describe("Term of the Sejm"),
-    offset: z.number().int().positive().optional().describe("Offset for pagination"),
+    offset: z.number().int().nonnegative().optional().describe("Offset for pagination"),
     limit: z.number().int().positive().optional().describe("Limit for pagination"),
   },
   handler: async (args: { term: number, offset?: number, limit?: number }) => {
@@ -67,7 +67,7 @@ export const getMpsTool = {
       content: [
         {
           type: "text" as const,
-          text: `Fetched the list of MPs for term ${term}:\n\n${JSON.stringify(mps.data, null, 2)}`,
+          text: `${mps.notice ?? ""}Fetched the list of MPs for term ${term}:\n\n${JSON.stringify(mps.data, null, 2)}`,
         },
       ],
     };

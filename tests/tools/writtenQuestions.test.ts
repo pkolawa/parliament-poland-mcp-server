@@ -36,7 +36,7 @@ describe("getWrittenQuestionsTool", () => {
     });
 
     expect(makeSejmRequestMock).toHaveBeenCalledWith(
-      "/term10/written-questions",
+      "/term10/writtenQuestions",
       {
         offset: 1,
         limit: 2,

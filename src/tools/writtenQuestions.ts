@@ -6,7 +6,7 @@ export const getWrittenQuestionsTool = {
   description: "Get a list of written questions for a given term",
   schema: {
     term: z.number().int().positive().describe("Term number of the Sejm"),
-    offset: z.number().int().positive().optional().describe("Offset for pagination"),
+    offset: z.number().int().nonnegative().optional().describe("Offset for pagination"),
     limit: z.number().int().positive().optional().describe("Limit for pagination"),
     sort_by: z.string().optional().describe("Sort by a specific field."),
     title: z.string().optional().describe("Search for a phrase in the title."),
@@ -19,7 +19,7 @@ export const getWrittenQuestionsTool = {
   handler: async (args: { term: number, offset?: number, limit?: number, sort_by?: string, title?: string, from?: string, to?: string, since?: string, till?: string, modifiedSince?: string }) => {
     const { term, offset, limit, sort_by, title, from, to, since, till, modifiedSince } = args;
     const writtenQuestions = await makeSejmRequest<WrittenQuestion[]>(
-      `/term${term}/written-questions`,
+      `/term${term}/writtenQuestions`,
       { offset, limit, sort_by, title, from, to, since, till, modifiedSince },
     );
 
@@ -39,7 +39,7 @@ export const getWrittenQuestionsTool = {
       content: [
         {
           type: "text" as const,
-          text: `Fetched the list of written questions for term ${term}:\n\n${JSON.stringify(writtenQuestions.data, null, 2)}`,
+          text: `${writtenQuestions.notice ?? ""}Fetched the list of written questions for term ${term}:\n\n${JSON.stringify(writtenQuestions.data, null, 2)}`,
         },
       ],
     };

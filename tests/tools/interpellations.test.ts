@@ -1,6 +1,10 @@
 import { jest } from "@jest/globals";
 import { makeSejmRequest } from "../../src/utils/api.js";
-import { getInterpellationTool, getInterpellationsTool } from "../../src/tools/interpellations.js";
+import {
+  getInterpellationTool,
+  getInterpellationsTool,
+  getInterpellationTextTool,
+} from "../../src/tools/interpellations.js";
 
 type MakeSejmRequestFn = (
   endpoint: string,
@@ -98,6 +102,48 @@ describe("getInterpellationTool", () => {
       "Failed to fetch details for interpellation 12 in term 10."
     );
     expect(result.content[0].text).toContain("Error: HTTP 404 Not Found");
+    expect(result.isError).toBe(true);
+  });
+});
+
+describe("getInterpellationTextTool", () => {
+  it("returns the interpellation body as plain text", async () => {
+    makeSejmRequestMock.mockResolvedValue({ ok: true, data: "<h1>Interpelacja nr 10</h1><p>Pani Minister!</p>" });
+
+    const result = await getInterpellationTextTool.handler({ term: 10, num: 10 });
+
+    expect(makeSejmRequestMock).toHaveBeenCalledWith(
+      "/term10/interpellations/10/body",
+      undefined,
+      { format: "html" }
+    );
+    expect(result.content[0].text).toBe(
+      "Fetched the text of interpellation 10 in term 10:\n\nInterpelacja nr 10\n\nPani Minister!"
+    );
+  });
+
+  it("returns the body of a reply when given its key", async () => {
+    makeSejmRequestMock.mockResolvedValue({ ok: true, data: "<p>Odpowiedź</p>" });
+
+    const result = await getInterpellationTextTool.handler({ term: 10, num: 10, replyKey: "CZLJNC" });
+
+    expect(makeSejmRequestMock).toHaveBeenCalledWith(
+      "/term10/interpellations/10/reply/CZLJNC/body",
+      undefined,
+      { format: "html" }
+    );
+    expect(result.content[0].text).toContain("Fetched the text of reply CZLJNC to interpellation 10 in term 10:");
+  });
+
+  it("returns a failure message when the API fails", async () => {
+    makeSejmRequestMock.mockResolvedValue({
+      ok: false,
+      error: { status: 404, message: "HTTP 404 Not Found for /sejm/test" },
+    });
+
+    const result = await getInterpellationTextTool.handler({ term: 10, num: 10 });
+
+    expect(result.content[0].text).toContain("Failed to fetch the text of interpellation 10 in term 10.");
     expect(result.isError).toBe(true);
   });
 });

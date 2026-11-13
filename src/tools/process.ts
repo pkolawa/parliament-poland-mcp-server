@@ -6,13 +6,15 @@ export const getProcessTool = {
   description: "Get information about a specific legislative process",
   schema: {
     term: z.number().int().positive().describe("Term of the Sejm"),
-    processNumber:
-      z.number().int().positive().describe("Number of the legislative process"),
+    processNumber: z
+      .string()
+      .regex(/^\d+(-[0-9A-Za-z]+)?$/, "Expected a print number such as 1070 or 16168-z")
+      .describe("Print number identifying the legislative process, e.g. 1070 or 16168-z"),
   },
-  handler: async (args: { term: number; processNumber: number }) => {
+  handler: async (args: { term: number; processNumber: string }) => {
     const { term, processNumber } = args;
     const process = await makeSejmRequest<LegislativeProcess>(
-      `/term${term}/process/${processNumber}`
+      `/term${term}/processes/${processNumber}`
     );
 
     if (!process.ok) {
@@ -31,7 +33,7 @@ export const getProcessTool = {
       content: [
         {
           type: "text" as const,
-          text: `Fetched process ${processNumber} for term ${term}:\n\n${JSON.stringify(
+          text: `${process.notice ?? ""}Fetched process ${processNumber} for term ${term}:\n\n${JSON.stringify(
             process.data,
             null,
             2

@@ -24,7 +24,8 @@ Parliament Poland MCP Server — TypeScript MCP server exposing the Polish Parli
 
 - `src/index.ts` — entry point, stdio transport
 - `src/server.ts` — registers all tools with McpServer
-- `src/utils/api.ts` — HTTP client (`makeSejmRequest`)
+- `src/utils/api.ts` — HTTP client (`makeSejmRequest`): retries, in-memory cache, `format: "html"` for HTML endpoints
+- `src/utils/html.ts` — `htmlToText` for statement, interpellation and agenda HTML
 - `src/tools/*.ts` — each file exports tool objects with `{ description, schema, handler }`
 - `src/tools/index.ts` — aggregates all tools into a single map
 

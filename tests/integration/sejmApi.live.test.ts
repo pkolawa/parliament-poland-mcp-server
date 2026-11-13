@@ -2,6 +2,18 @@ import { jest } from "@jest/globals";
 import { makeSejmRequest } from "../../src/utils/api.js";
 import { getMpsTool } from "../../src/tools/mps.js";
 import { getTermsTool } from "../../src/tools/terms.js";
+import { getBilateralGroupsTool } from "../../src/tools/bilateralGroups.js";
+import { getProcessTool } from "../../src/tools/process.js";
+import { getTranscriptsTool } from "../../src/tools/transcripts.js";
+import { getWrittenQuestionsTool } from "../../src/tools/writtenQuestions.js";
+import { getVotingTool, searchVotingsTool } from "../../src/tools/votings.js";
+import { getMpVotingStatsTool, getMpVotingsTool } from "../../src/tools/mpVotings.js";
+import { getPassedProcessesTool } from "../../src/tools/processes.js";
+import { getCurrentProceedingTool } from "../../src/tools/proceedings.js";
+import { getStatementTool } from "../../src/tools/transcripts.js";
+import { getCommitteeSittingsTool, getCommitteeSittingTool } from "../../src/tools/committees.js";
+import { getInterpellationTextTool } from "../../src/tools/interpellations.js";
+import { getVideosByDateTool } from "../../src/tools/videos.js";
 
 const runLiveApiTests = process.env.RUN_LIVE_API_TESTS === "true";
 const liveDescribe = runLiveApiTests ? describe : describe.skip;
@@ -102,6 +114,24 @@ async function findFirstTermWithResults(
   }
 
   return null;
+}
+
+async function currentTerm(): Promise<number> {
+  const terms = await fetchData("/term");
+  const termNumber = extractTermNumber(Array.isArray(terms) ? terms : []);
+  if (termNumber === null) {
+    throw new Error("The API returned no terms.");
+  }
+  return termNumber;
+}
+
+function expectToolSuccess(
+  result: { content: { text: string }[]; isError?: boolean },
+  successText: string
+) {
+  const text = result.content[0]?.text ?? "";
+  expect(result.isError).toBeUndefined();
+  expect(text).toContain(successText);
 }
 
 liveDescribe("Sejm API live integration", () => {
@@ -255,5 +285,80 @@ liveDescribe("Sejm API live integration", () => {
 
     expect(text.includes("Failed to fetch")).toBe(false);
     expect(text).toContain(`Fetched the list of MPs for term ${termNumber}:`);
+  });
+
+  it("bilateral groups MCP tool returns success text for live API", async () => {
+    const term = await currentTerm();
+
+    const result = await getBilateralGroupsTool.handler({ term });
+
+    expectToolSuccess(result, `Fetched the list of bilateral groups for term ${term}:`);
+  });
+
+  it("written questions MCP tool returns success text for live API", async () => {
+    const term = await currentTerm();
+
+    const result = await getWrittenQuestionsTool.handler({ term, limit: 1 });
+
+    expectToolSuccess(result, `Fetched the list of written questions for term ${term}:`);
+  });
+
+  it("process MCP tool returns success text for live API", async () => {
+    const term = await currentTerm();
+    const processes = await fetchData(`/term${term}/processes`, { limit: 1 });
+    const first = Array.isArray(processes) ? processes[0] : null;
+    if (!isObject(first) || typeof first.number !== "string") {
+      throw new Error(`No legislative process found in term ${term}.`);
+    }
+
+    const result = await getProcessTool.handler({ term, processNumber: first.number });
+
+    expectToolSuccess(result, `Fetched process ${first.number} for term ${term}:`);
+  });
+
+  it("transcripts MCP tool returns success text for live API", async () => {
+    const term = await currentTerm();
+    const proceedings = await fetchData(`/term${term}/proceedings`);
+    const sitting = (Array.isArray(proceedings) ? proceedings : []).find(
+      (p): p is { number: number; dates: string[] } =>
+        isObject(p) && typeof p.number === "number" && p.number > 0 &&
+        Array.isArray(p.dates) && p.dates.length > 0
+    );
+    if (!sitting) {
+      throw new Error(`No sitting with dates found in term ${term}.`);
+    }
+
+    const result = await getTranscriptsTool.handler({
+      term,
+      proceeding: sitting.number,
+      date: sitting.dates[0],
+    });
+
+    expectToolSuccess(
+      result,
+      `Fetched the transcript statements for sitting ${sitting.number} on ${sitting.dates[0]} in term ${term}:`
+    );
+  });
+
+  // Historical records of the 10th term (first sitting on 2023-11-13) that will not change.
+  it.each([
+    ["get-voting", () => getVotingTool.handler({ term: 10, sitting: 1, votingNumber: 1 }), "votesByClub"],
+    ["search-votings", () => searchVotingsTool.handler({ term: 10, title: "Marszałka", limit: 1 }), "Found 1 votings"],
+    ["get-mp-voting-stats", () => getMpVotingStatsTool.handler({ term: 10, id: 1 }), "numVotings"],
+    ["get-mp-votings", () => getMpVotingsTool.handler({ term: 10, id: 1, sitting: 1, date: "2023-11-13" }), "votingNumber"],
+    ["get-passed-processes", () => getPassedProcessesTool.handler({ term: 10, limit: 1 }), "Fetched the list of passed processes"],
+    ["get-current-proceeding", () => getCurrentProceedingTool.handler({ term: 10 }), "Fetched the current sitting"],
+    ["get-statement", () => getStatementTool.handler({ term: 10, proceeding: 1, date: "2023-11-13", statementNum: 1 }), "Andrzej Duda"],
+    ["get-committee-sittings", () => getCommitteeSittingsTool.handler({ term: 10, code: "ASW", dateTo: "2023-11-30" }), "Wybór Prezydium"],
+    ["get-committee-sitting", () => getCommitteeSittingTool.handler({ term: 10, code: "ASW", num: 1 }), "Wybór Prezydium"],
+    ["get-interpellation-text", () => getInterpellationTextTool.handler({ term: 10, num: 10 }), "Interpelacja nr 10"],
+    ["get-interpellation-text (reply)", () => getInterpellationTextTool.handler({ term: 10, num: 10, replyKey: "CZLJNC" }), "Odpowiedź na interpelację nr 10"],
+    ["get-videos-by-date", () => getVideosByDateTool.handler({ term: 10, date: "2023-11-13" }), "playerLink"],
+  ] as const)("%s MCP tool returns success text for live API", async (_name, call, expected) => {
+    const result = await call();
+
+    expect(result.isError).toBeUndefined();
+    expect(result.content[0].text).toContain(expected);
+    expect(result.content[0].text).not.toMatch(/<\/?(p|div|html)\b/);
   });
 });

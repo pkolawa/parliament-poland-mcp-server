@@ -33,6 +33,20 @@ describe("getMpsTool", () => {
     );
   });
 
+  it("prefixes the data with the notice when it comes from the cache", async () => {
+    makeSejmRequestMock.mockResolvedValue({
+      ok: true,
+      data: [{ id: 1 }],
+      notice: "Note: the Sejm API is currently unavailable.\n\n",
+    });
+
+    const result = await getMpsTool.handler({ term: 10 });
+
+    expect(result.content[0].text).toMatch(
+      /^Note: the Sejm API is currently unavailable\.\n\nFetched the list of MPs for term 10:/
+    );
+  });
+
   it("returns a failure message when the API fails", async () => {
     makeSejmRequestMock.mockResolvedValue({
       ok: false,

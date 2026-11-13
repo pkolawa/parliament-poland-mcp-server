@@ -4,16 +4,19 @@ import type { BilateralGroup } from "../types/api.js";
 
 export const getBilateralGroupsTool = {
   description: "Get a list of bilateral groups in the Sejm",
-  schema: {},
-  handler: async () => {
-    const groups = await makeSejmRequest<BilateralGroup[]>("/bilateralGroups");
+  schema: {
+    term: z.number().int().positive().describe("Term of the Sejm"),
+  },
+  handler: async (args: { term: number }) => {
+    const { term } = args;
+    const groups = await makeSejmRequest<BilateralGroup[]>(`/term${term}/bilateralGroups`);
 
     if (!groups.ok) {
       return {
         content: [
           {
             type: "text" as const,
-            text: `Failed to fetch the list of bilateral groups.\n\nError: ${groups.error.message}`,
+            text: `Failed to fetch the list of bilateral groups for term ${term}.\n\nError: ${groups.error.message}`,
           },
         ],
         isError: true,
@@ -24,7 +27,7 @@ export const getBilateralGroupsTool = {
       content: [
         {
           type: "text" as const,
-          text: `Fetched the list of bilateral groups:\n\n${JSON.stringify(
+          text: `${groups.notice ?? ""}Fetched the list of bilateral groups for term ${term}:\n\n${JSON.stringify(
             groups.data,
             null,
             2

@@ -6,7 +6,7 @@ export const getVideosTool = {
   description: "Get a list of video recordings for a given term",
   schema: {
     term: z.number().int().positive().describe("Term of the Sejm"),
-    offset: z.number().int().positive().optional().describe("Offset for pagination"),
+    offset: z.number().int().nonnegative().optional().describe("Offset for pagination"),
     limit: z.number().int().positive().optional().describe("Limit for pagination"),
   },
   handler: async (args: { term: number, offset?: number, limit?: number }) => {
@@ -32,7 +32,45 @@ export const getVideosTool = {
       content: [
         {
           type: "text" as const,
-          text: `Fetched the list of video recordings for term ${term}:\n\n${JSON.stringify(videos.data, null, 2)}`,
+          text: `${videos.notice ?? ""}Fetched the list of video recordings for term ${term}:\n\n${JSON.stringify(videos.data, null, 2)}`,
+        },
+      ],
+    };
+  },
+};
+
+export const getVideosByDateTool = {
+  description: "Get video transmissions from a given day",
+  schema: {
+    term: z.number().int().positive().describe("Term of the Sejm"),
+    date: z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/, "Expected a date in YYYY-MM-DD format")
+      .optional()
+      .describe("Day in YYYY-MM-DD format; omit for today"),
+  },
+  handler: async (args: { term: number, date?: string }) => {
+    const { term, date } = args;
+    const day = date ?? "today";
+    const videos = await makeSejmRequest<Video[]>(`/term${term}/videos/${day}`);
+
+    if (!videos.ok) {
+      return {
+        content: [
+          {
+            type: "text" as const,
+            text: `Failed to fetch video transmissions for ${day} in term ${term}.\n\nError: ${videos.error.message}`,
+          },
+        ],
+        isError: true,
+      };
+    }
+
+    return {
+      content: [
+        {
+          type: "text" as const,
+          text: `${videos.notice ?? ""}Fetched video transmissions for ${day} in term ${term}:\n\n${JSON.stringify(videos.data, null, 2)}`,
         },
       ],
     };

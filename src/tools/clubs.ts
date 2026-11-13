@@ -6,7 +6,7 @@ export const getClubsTool = {
   description: "Get a list of clubs for a given term",
   schema: {
     term: z.number().int().positive().describe("Term of the Sejm"),
-    offset: z.number().int().positive().optional().describe("Offset for pagination"),
+    offset: z.number().int().nonnegative().optional().describe("Offset for pagination"),
     limit: z.number().int().positive().optional().describe("Limit for pagination"),
   },
   handler: async (args: { term: number, offset?: number, limit?: number }) => {
@@ -32,7 +32,7 @@ export const getClubsTool = {
       content: [
         {
           type: "text" as const,
-          text: `Fetched the list of clubs for term ${term}:\n\n${JSON.stringify(clubs.data, null, 2)}`,
+          text: `${clubs.notice ?? ""}Fetched the list of clubs for term ${term}:\n\n${JSON.stringify(clubs.data, null, 2)}`,
         },
       ],
     };
@@ -67,7 +67,7 @@ export const getClubTool = {
       content: [
         {
           type: "text" as const,
-          text: `Fetched details for club ${id} in term ${term}:\n\n${JSON.stringify(club.data, null, 2)}`,
+          text: `${club.notice ?? ""}Fetched details for club ${id} in term ${term}:\n\n${JSON.stringify(club.data, null, 2)}`,
         },
       ],
     };

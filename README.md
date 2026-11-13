@@ -42,7 +42,7 @@ The server provides the following functions:
 
 ### Bilateral Groups
 
-- [ ] `getBilateralGroupsTool`: Get a list of bilateral groups in the Sejm.
+- [ ] `getBilateralGroupsTool`: Get a list of bilateral groups for a given term.
 
 ### Clubs
 
@@ -53,16 +53,21 @@ The server provides the following functions:
 
 - [ ] `getCommitteesTool`: Get a list of committees for a given term.
 - [ ] `getCommitteeTool`: Get detailed information about a specific committee.
+- [ ] `getCommitteeSittingsTool`: Get a list of sittings of a committee, optionally within a date range.
+- [ ] `getCommitteeSittingTool`: Get details about a single committee sitting, including its agenda and videos.
 
 ### Interpellations
 
 - [ ] `getInterpellationsTool`: Get a list of interpellations for a given term.
 - [ ] `getInterpellationTool`: Get detailed information about a specific interpellation.
+- [ ] `getInterpellationTextTool`: Get the text of an interpellation or of a reply to it.
 
 ### MPs
 
 - [ ] `getMpTool`: Get information about a member of Parliament.
 - [ ] `getMpsTool`: Get a list of MPs for a given term.
+- [ ] `getMpVotingStatsTool`: Get voting attendance statistics of an MP for each sitting day.
+- [ ] `getMpVotingsTool`: Get how an MP voted on a given sitting day.
 
 ### Prints
 
@@ -72,11 +77,13 @@ The server provides the following functions:
 ### Proceedings
 
 - [ ] `getProceedingsTool`: Get a list of proceedings for a given term.
+- [ ] `getCurrentProceedingTool`: Get the current or next sitting of the Sejm with its agenda.
 
 ### Legislative Process
 
-- [ ] `getProcessTool`: Get information about a specific legislative process.
+- [ ] `getProcessTool`: Get information about a specific legislative process (identified by its print number, e.g. `1070` or `16168-z`).
 - [ ] `getProcessesTool`: Get a list of legislative processes for a given term.
+- [ ] `getPassedProcessesTool`: Get a list of passed legislative processes for a given term.
 
 ### Terms
 
@@ -84,15 +91,19 @@ The server provides the following functions:
 
 ### Transcripts
 
-- [ ] `getTranscriptsTool`: Get a list of transcripts for a given term.
+- [ ] `getTranscriptsTool`: Get the list of transcript statements for a Sejm sitting day.
+- [ ] `getStatementTool`: Get the text of a single statement from a sitting transcript.
 
 ### Videos
 
 - [ ] `getVideosTool`: Get a list of video recordings for a given term.
+- [ ] `getVideosByDateTool`: Get video transmissions from a given day (today by default).
 
 ### Votings
 
 - [ ] `getVotingsTool`: Get a list of votings for a given term.
+- [ ] `getVotingTool`: Get the results of a single voting with a breakdown by club, and optionally how each MP voted.
+- [ ] `searchVotingsTool`: Search for votings by title, sitting or date range.
 
 ### Written Questions
 
