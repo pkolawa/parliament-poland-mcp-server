@@ -285,3 +285,74 @@ export interface BilateralGroup {
   appointmentDate?: string;
   [key: string]: unknown;
 }
+
+/** A reference from one act to another in the ELI API, e.g. to an amending act. */
+export interface ActReference {
+  /** ELI of the referenced act, e.g. DU/2024/1. */
+  id: string;
+  art?: string;
+  date?: string;
+}
+
+/** An act as listed by the ELI API. */
+export interface ActInfo {
+  /** European Legislation Identifier: publisher/year/position, e.g. DU/2024/1. */
+  ELI: string;
+  address: string;
+  publisher: string;
+  year: number;
+  volume: number;
+  pos: number;
+  title: string;
+  displayAddress: string;
+  type: string;
+  status: string;
+  /** Date of the act. */
+  announcementDate?: string;
+  /** Date of publication in the journal. */
+  promulgation?: string;
+  changeDate: string;
+  textHTML: boolean;
+  textPDF: boolean;
+  /** IN_FORCE, NOT_IN_FORCE or UNKNOWN. */
+  inForce?: string;
+  entryIntoForce?: string;
+}
+
+/** Full details of an act from the ELI API. */
+export interface Act extends ActInfo {
+  validFrom?: string;
+  repealDate?: string;
+  expirationDate?: string;
+  legalStatusDate?: string;
+  comments?: string;
+  releasedBy?: string[];
+  authorizedBody?: string[];
+  obligated?: string[];
+  keywords?: string[];
+  keywordsNames?: string[];
+  previousTitle?: string[];
+  directives?: { address: string; title: string; date: string }[];
+  texts?: { fileName: string; type: string }[];
+  prints?: { term: number; number: string; link?: string; linkPrintAPI?: string; linkProcessAPI?: string }[];
+  /** References by type, e.g. "Akty zmieniające" (amending acts) or "Inf. o tekście jednolitym" (consolidated texts). */
+  references?: Record<string, ActReference[]>;
+}
+
+export interface ActList {
+  totalCount: number;
+  offset: number;
+  count: number;
+  items: Act[];
+}
+
+/** A unit of an act (book, chapter, article, paragraph, ...) in the structure from the ELI API. */
+export interface ActUnit {
+  id: string;
+  /** book, part, titl, bran, chpt, schp, arti, pass, para, pint, lett, ... */
+  type: string;
+  /** Number or name of the unit within its parent, e.g. 415 or 18_3_a for Art. 18^3a; absent for top-level parts. */
+  name?: string;
+  title?: string;
+  children?: ActUnit[];
+}

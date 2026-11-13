@@ -2,7 +2,7 @@
 
 ## Project
 
-Parliament Poland MCP Server — TypeScript MCP server exposing the Polish Parliament public API (api.sejm.gov.pl) as tools for LLMs.
+Parliament Poland MCP Server — TypeScript MCP server exposing the Polish Parliament public API (api.sejm.gov.pl: the Sejm API and the ELI API of legal acts) as tools for LLMs.
 
 ## Stack
 
@@ -25,8 +25,8 @@ Parliament Poland MCP Server — TypeScript MCP server exposing the Polish Parli
 
 - `src/index.ts` — entry point, stdio transport
 - `src/server.ts` — registers all tools with McpServer
-- `src/utils/api.ts` — HTTP client (`makeSejmRequest`): retries, in-memory cache, `format: "html"` for HTML endpoints
-- `src/utils/html.ts` — `htmlToText` for statement, interpellation and agenda HTML
+- `src/utils/api.ts` — HTTP client (`makeSejmRequest`): retries, in-memory cache, `format: "html"` for HTML endpoints, `api: "eli"` for the legal acts API (`/eli` instead of `/sejm`)
+- `src/utils/html.ts` — `htmlToText` for statement, interpellation and agenda HTML; `actHtmlToText` for the text of legal acts
 - `src/tools/*.ts` — each file exports tool objects with `{ description, schema, handler }`
 - `src/tools/index.ts` — aggregates all tools into a single map
 
