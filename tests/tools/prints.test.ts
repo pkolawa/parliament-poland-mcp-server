@@ -54,7 +54,7 @@ describe("getPrintTool", () => {
   it("returns a success message with data", async () => {
     makeSejmRequestMock.mockResolvedValue({ ok: true, data: { number: 123 } });
 
-    const result = await getPrintTool.handler({ term: 10, printNumber: 123 });
+    const result = await getPrintTool.handler({ term: 10, printNumber: "123" });
 
     expect(makeSejmRequestMock).toHaveBeenCalledWith("/term10/prints/123");
     expect(result.content[0].text).toContain(
@@ -68,7 +68,7 @@ describe("getPrintTool", () => {
       error: { status: 404, message: "HTTP 404 Not Found for /sejm/test" },
     });
 
-    const result = await getPrintTool.handler({ term: 10, printNumber: 123 });
+    const result = await getPrintTool.handler({ term: 10, printNumber: "123" });
 
     expect(result.content[0].text).toContain(
       "Failed to fetch details for print 123 in term 10."

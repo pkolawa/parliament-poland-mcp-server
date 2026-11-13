@@ -1,36 +1,23 @@
-import { z } from "zod";
 import { makeSejmRequest } from "../utils/api.js";
-import type { Term } from "../types/api.js";
+import { buildToolResponse, defineTool, listOutput } from "../utils/tool.js";
+import { TermSchema, type Term } from "../types/api.js";
+import { limit, offset } from "./params.js";
 
-export const getTermsTool = {
-  description: "Get a list of Sejm terms",
+export const getTermsTool = defineTool({
+  title: "List Sejm terms",
+  description:
+    "List the terms (kadencje: four-year parliaments elected together) of the Sejm, the lower house of the Polish " +
+    "Parliament, with their start and end dates. " +
+    "The term marked current=true is the one all other tools use when `term` is omitted.",
   schema: {
-    offset: z.number().int().nonnegative().optional().describe("Offset for pagination"),
-    limit: z.number().int().positive().optional().describe("Limit for pagination"),
+    offset: offset(),
+    limit: limit(),
   },
-  handler: async (args: { offset?: number, limit?: number }) => {
-    const { offset, limit } = args;
-    const terms = await makeSejmRequest<Term[]>("/term", { offset, limit });
-
-    if (!terms.ok) {
-      return {
-        content: [
-          {
-            type: "text" as const,
-            text: `Failed to fetch the list of terms.\n\nError: ${terms.error.message}`,
-          },
-        ],
-        isError: true,
-      };
-    }
-
-    return {
-      content: [
-        {
-          type: "text" as const,
-          text: `${terms.notice ?? ""}Fetched the list of Sejm terms:\n\n${JSON.stringify(terms.data, null, 2)}`,
-        },
-      ],
-    };
-  },
-};
+  outputSchema: listOutput(TermSchema),
+  handler: async ({ offset, limit }) =>
+    buildToolResponse(
+      await makeSejmRequest<Term[]>("/term", { offset, limit }),
+      "Fetched the list of Sejm terms:",
+      "Failed to fetch the list of terms."
+    ),
+});

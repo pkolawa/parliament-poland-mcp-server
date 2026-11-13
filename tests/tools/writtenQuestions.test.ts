@@ -26,13 +26,14 @@ describe("getWrittenQuestionsTool", () => {
       term: 10,
       offset: 1,
       limit: 2,
-      sort_by: "date",
+      sort_by: "-receiptDate",
       title: "budget",
       from: "1",
       to: "Ministry",
       since: "2020-01-01",
       till: "2020-02-01",
       modifiedSince: "2020-02-10",
+      delayed: false,
     });
 
     expect(makeSejmRequestMock).toHaveBeenCalledWith(
@@ -40,13 +41,14 @@ describe("getWrittenQuestionsTool", () => {
       {
         offset: 1,
         limit: 2,
-        sort_by: "date",
+        sort_by: "-receiptDate",
         title: "budget",
         from: "1",
         to: "Ministry",
         since: "2020-01-01",
         till: "2020-02-01",
         modifiedSince: "2020-02-10",
+        delayed: false,
       }
     );
     expect(result.content[0].text).toContain(

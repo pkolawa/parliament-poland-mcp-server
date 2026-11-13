@@ -1,78 +1,47 @@
-import { z } from "zod";
 import { makeSejmRequest } from "../utils/api.js";
-import type { MpVote, VotingStat } from "../types/api.js";
+import { buildToolResponse, defineTool, listOutput, withTerm } from "../utils/tool.js";
+import { MpVoteSchema, VotingStatSchema, type MpVote, type VotingStat } from "../types/api.js";
+import { mpId, sitting, sittingDate, term } from "./params.js";
 
-export const getMpVotingStatsTool = {
-  description: "Get voting attendance statistics of an MP for each sitting day",
+export const getMpVotingStatsTool = defineTool({
+  title: "Get an MP's voting attendance",
+  description:
+    "Get an MP's attendance in votings for every sitting day of a term: how many votings were held, " +
+    "how many the MP took part in or missed, and whether the absence was excused. " +
+    "Use a sitting number and date from here with get-mp-votings to see the votes themselves.",
   schema: {
-    term: z.number().int().positive().describe("Term of the Sejm"),
-    id: z.number().int().positive().describe("ID of the MP"),
+    term: term(),
+    id: mpId(),
   },
-  handler: async (args: { term: number; id: number }) => {
-    const { term, id } = args;
-    const stats = await makeSejmRequest<VotingStat[]>(
-      `/term${term}/MP/${id}/votings/stats`
-    );
+  outputSchema: listOutput(VotingStatSchema),
+  handler: ({ term, id }) =>
+    withTerm(term, async (term) =>
+      buildToolResponse(
+        await makeSejmRequest<VotingStat[]>(`/term${term}/MP/${id}/votings/stats`),
+        `Fetched voting statistics for the MP with ID ${id} in term ${term}:`,
+        `Failed to fetch voting statistics for the MP with ID ${id} in term ${term}.`
+      )
+    ),
+});
 
-    if (!stats.ok) {
-      return {
-        content: [
-          {
-            type: "text" as const,
-            text: `Failed to fetch voting statistics for the MP with ID ${id} in term ${term}.\n\nError: ${stats.error.message}`,
-          },
-        ],
-        isError: true,
-      };
-    }
-
-    return {
-      content: [
-        {
-          type: "text" as const,
-          text: `${stats.notice ?? ""}Fetched voting statistics for the MP with ID ${id} in term ${term}:\n\n${JSON.stringify(stats.data, null, 2)}`,
-        },
-      ],
-    };
-  },
-};
-
-export const getMpVotingsTool = {
-  description: "Get how an MP voted on a given sitting day",
+export const getMpVotingsTool = defineTool({
+  title: "Get an MP's votes on a day",
+  description:
+    "Get how an MP voted (YES, NO, ABSTAIN, ABSENT) in every voting held on one day of a plenary sitting, " +
+    "with the title and topic of each voting. Days on which votings were held are listed by get-mp-voting-stats.",
   schema: {
-    term: z.number().int().positive().describe("Term of the Sejm"),
-    id: z.number().int().positive().describe("ID of the MP"),
-    sitting: z.number().int().positive().describe("Sejm sitting number"),
-    date: z
-      .string()
-      .regex(/^\d{4}-\d{2}-\d{2}$/, "Expected a date in YYYY-MM-DD format")
-      .describe("Day of the sitting in YYYY-MM-DD format"),
+    term: term(),
+    id: mpId(),
+    sitting: sitting(),
+    date: sittingDate(),
   },
-  handler: async (args: { term: number; id: number; sitting: number; date: string }) => {
-    const { term, id, sitting, date } = args;
-    const votes = await makeSejmRequest<MpVote[]>(
-      `/term${term}/MP/${id}/votings/${sitting}/${date}`
-    );
-
-    if (!votes.ok) {
-      return {
-        content: [
-          {
-            type: "text" as const,
-            text: `Failed to fetch the votes of the MP with ID ${id} on ${date} (sitting ${sitting}, term ${term}).\n\nError: ${votes.error.message}`,
-          },
-        ],
-        isError: true,
-      };
-    }
-
-    return {
-      content: [
-        {
-          type: "text" as const,
-          text: `${votes.notice ?? ""}Fetched the votes of the MP with ID ${id} on ${date} (sitting ${sitting}, term ${term}):\n\n${JSON.stringify(votes.data, null, 2)}`,
-        },
-      ],
-    };
-  },
-};
+  outputSchema: listOutput(MpVoteSchema),
+  handler: ({ term, id, sitting, date }) =>
+    withTerm(term, async (term) =>
+      buildToolResponse(
+        await makeSejmRequest<MpVote[]>(`/term${term}/MP/${id}/votings/${sitting}/${date}`),
+        `Fetched the votes of the MP with ID ${id} on ${date} (sitting ${sitting}, term ${term}):`,
+        `Failed to fetch the votes of the MP with ID ${id} on ${date} (sitting ${sitting}, term ${term}).`
+      )
+    ),
+});

@@ -1,75 +1,46 @@
-import { z } from "zod";
 import { makeSejmRequest } from "../utils/api.js";
-import type { Mp } from "../types/api.js";
+import { buildToolResponse, defineTool, listOutput, objectOutput, withTerm } from "../utils/tool.js";
+import { MpSchema, type Mp } from "../types/api.js";
+import { limit, mpId, offset, term } from "./params.js";
 
-
-export const getMpTool = {
-  description: "Get information about a member of Parliament",
+export const getMpTool = defineTool({
+  title: "Get an MP",
+  description:
+    "Get details of one member of the Sejm (poseł, MP): name, club, electoral district and voivodeship, " +
+    "votes received, birth date and place, education, profession, e-mail, and whether the mandate is still held.",
   schema: {
-    term: z.number().int().positive().describe("Term of the Sejm"),
-    id: z.number().int().positive().describe("ID of the MP"),
+    term: term(),
+    id: mpId(),
   },
-  handler: async (args: { term: number; id: number }) => {
-    const { term, id } = args;
-    const mp = await makeSejmRequest<Mp>(`/term${term}/MP/${id}`);
+  outputSchema: objectOutput(MpSchema),
+  handler: ({ term, id }) =>
+    withTerm(term, async (term) =>
+      buildToolResponse(
+        await makeSejmRequest<Mp>(`/term${term}/MP/${id}`),
+        `Fetched information about the MP with ID ${id} in term ${term}:`,
+        `Failed to fetch information about the MP with ID ${id} in term ${term}.`
+      )
+    ),
+});
 
-    if (!mp.ok) {
-      return {
-        content: [
-          {
-            type: "text" as const,
-            text: `Failed to fetch information about the MP with ID ${id} in term ${term}.\n\nError: ${mp.error.message}`,
-          },
-        ],
-        isError: true,
-      };
-    }
-
-    return {
-      content: [
-        {
-          type: "text" as const,
-          text: `${mp.notice ?? ""}Fetched information about the MP with ID ${id} in term ${term}:\n\n${JSON.stringify(mp.data, null, 2)}`,
-        },
-      ],
-    };
-  },
-};
-
-export const getMpsTool = {
-
-  description: "Get a list of MPs for a given term",
+export const getMpsTool = defineTool({
+  title: "List MPs",
+  description:
+    "List members of the Sejm (posłowie, MPs) in a term with their ID, name, club (klub), electoral district and active flag. " +
+    "MPs who left during the term are included with active=false. " +
+    "The ID is the input of get-member, get-mp-voting-stats and get-mp-votings.",
   schema: {
-    term: z.number().int().positive().describe("Term of the Sejm"),
-    offset: z.number().int().nonnegative().optional().describe("Offset for pagination"),
-    limit: z.number().int().positive().optional().describe("Limit for pagination"),
+    term: term(),
+    offset: offset(),
+    limit: limit(),
   },
-  handler: async (args: { term: number, offset?: number, limit?: number }) => {
-    const { term, offset, limit } = args;
-    const mps = await makeSejmRequest<Mp[]>(
-      `/term${term}/MP`,
-      { offset, limit },
-    );
-
-    if (!mps.ok) {
-      return {
-        content: [
-          {
-            type: "text" as const,
-            text: `Failed to fetch the list of MPs for term ${term}\n\nError: ${mps.error.message}`,
-          },
-        ],
-        isError: true,
-      };
-    }
-
-    return {
-      content: [
-        {
-          type: "text" as const,
-          text: `${mps.notice ?? ""}Fetched the list of MPs for term ${term}:\n\n${JSON.stringify(mps.data, null, 2)}`,
-        },
-      ],
-    };
-  },
-};
+  outputSchema: listOutput(MpSchema),
+  handler: ({ term, offset, limit }) =>
+    withTerm(term, async (term) =>
+      buildToolResponse(
+        await makeSejmRequest<Mp[]>(`/term${term}/MP`, { offset, limit }),
+        `Fetched the list of MPs for term ${term}:`,
+        `Failed to fetch the list of MPs for term ${term}`
+      )
+    ),
+});
