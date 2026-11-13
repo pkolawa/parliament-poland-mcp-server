@@ -93,9 +93,10 @@ describe("searchActsTool", () => {
     );
     const text = result.content[0].text;
     expect(text).toContain("Found 1 legal acts:");
-    expect(text).toContain('"ELI": "DU/1964/93"');
+    expect(text).toContain('"ELI":"DU/1964/93"');
     expect(text).not.toContain("references");
     expect(text).not.toContain("keywords");
+    expect(result.structuredContent).toMatchObject({ totalCount: 1, items: [{ ELI: "DU/1964/93" }] });
   });
 
   it("omits the in-force filter unless it is true and says how to get the next page", async () => {
@@ -272,7 +273,7 @@ describe("getActTextTool", () => {
     const result = await getActTextTool.handler({ publisher: "DU", year: 1964, position: 93, offset: 89 });
 
     expect(result.content[0].text).toBe(
-      "Offset 89 is beyond the end of the text of legal act DU/1964/93, which has 89 characters."
+      "Offset 89 is beyond the end of the text of legal act DU/1964/93.\n\nError: The text has 89 characters."
     );
     expect(result.isError).toBe(true);
   });
@@ -283,7 +284,7 @@ describe("getActTextTool", () => {
     const result = await getActTextTool.handler({ publisher: "MP", year: 2023, position: 1261 });
 
     expect(result.content[0].text).toBe(
-      "Legal act MP/2023/1261 has no HTML text in the ELI API; its text is only in the PDF: " +
+      "Legal act MP/2023/1261 has no HTML text in the ELI API.\n\nIts text is only in the PDF: " +
         "https://api.sejm.gov.pl/eli/acts/MP/2023/1261/text.pdf"
     );
     expect(result.isError).toBeUndefined();
@@ -340,7 +341,7 @@ describe("getActTextTool", () => {
 
     expect(makeSejmRequestMock).toHaveBeenCalledTimes(1);
     expect(result.content[0].text).toBe(
-      "Article 9999 was not found in legal act DU/1964/93. The act has 2 articles: 415, 18^3a"
+      "Article 9999 was not found in legal act DU/1964/93.\n\nError: The act has 2 articles: 415, 18^3a"
     );
     expect(result.isError).toBe(true);
   });
@@ -380,8 +381,9 @@ describe("getActKeywordsTool", () => {
 
     expect(makeSejmRequestMock).toHaveBeenCalledWith("/keywords", undefined, { api: "eli" });
     expect(cywil.content[0].text).toBe(
-      'Found 2 keywords of legal acts matching "CYWIL":\n\nkodeks cywilny\nSłużba Cywilna'
+      'Found 2 keywords of legal acts matching "CYWIL":\n\n["kodeks cywilny","Służba Cywilna"]'
     );
+    expect(cywil.structuredContent).toEqual({ items: ["kodeks cywilny", "Służba Cywilna"] });
     expect(zrodla.content[0].text).toContain("odnawialne źródła energii");
   });
 

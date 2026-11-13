@@ -1,76 +1,57 @@
 import { z } from "zod";
 import { makeSejmRequest } from "../utils/api.js";
-import type { Print } from "../types/api.js";
+import { buildToolResponse, defineTool, listOutput, objectOutput, withTerm } from "../utils/tool.js";
+import { PrintSchema, type Print } from "../types/api.js";
+import { limit, offset, printNumber, term } from "./params.js";
 
-export const getPrintsTool = {
-  description: "Get a list of prints for a given term",
+/** Prints returned by get-prints per page unless `limit` says otherwise. */
+export const PRINT_PAGE_SIZE = 50;
+
+export const getPrintsTool = defineTool({
+  title: "List prints",
+  description:
+    "List Sejm prints (druki sejmowe: the numbered documents the Sejm works on, such as bills, committee reports " +
+    "and opinions) with number, title, dates and attachment file names. " +
+    "A bill's print number also identifies its legislative process (get-process).",
   schema: {
-    term: z.number().int().positive().describe("Term of the Sejm"),
-    offset: z.number().int().nonnegative().optional().describe("Offset for pagination"),
-    limit: z.number().int().positive().optional().describe("Limit for pagination"),
-    sort_by: z.string().optional().describe("Sort by a specific field."),
+    term: term(),
+    sort_by: z
+      .string()
+      .regex(/^-?[A-Za-z]+$/, "Expected a field name, optionally prefixed with -")
+      .optional()
+      .describe("Field to sort by, e.g. documentDate; prefix with - for descending order (e.g. -changeDate for the most recently changed)"),
+    offset: offset(),
+    limit: limit(PRINT_PAGE_SIZE),
   },
-  handler: async (args: { term: number, offset?: number, limit?: number, sort_by?: string }) => {
-    const { term, offset, limit, sort_by } = args;
-    const prints = await makeSejmRequest<Print[]>(
-      `/term${term}/prints`,
-      { offset, limit, sort_by },
-    );
+  outputSchema: listOutput(PrintSchema),
+  handler: ({ term, offset = 0, limit = PRINT_PAGE_SIZE, sort_by }) =>
+    withTerm(term, async (term) =>
+      buildToolResponse(
+        await makeSejmRequest<Print[]>(`/term${term}/prints`, { offset, limit, sort_by }),
+        `Fetched the list of prints for term ${term}:`,
+        `Failed to fetch the list of prints for term ${term}.`,
+        // The API documents no offset or limit for this list. A term has thousands of prints, so if it
+        // ignores them and returns the whole list, paginate here instead of returning megabytes.
+        (prints) => (prints.length > limit ? prints.slice(offset, offset + limit) : prints)
+      )
+    ),
+});
 
-    if (!prints.ok) {
-      return {
-        content: [
-          {
-            type: "text" as const,
-            text: `Failed to fetch the list of prints for term ${term}.\n\nError: ${prints.error.message}`,
-          },
-        ],
-        isError: true,
-      };
-    }
-
-    return {
-      content: [
-        {
-          type: "text" as const,
-          text: `${prints.notice ?? ""}Fetched the list of prints for term ${term}:\n\n${JSON.stringify(prints.data, null, 2)}`,
-        },
-      ],
-    };
-  },
-};
-
-export const getPrintTool = {
-  description: "Get detailed information about a specific print",
+export const getPrintTool = defineTool({
+  title: "Get a print",
+  description:
+    "Get one Sejm print (druk): title, dates, attachment file names, associated prints and the legislative processes it belongs to.",
   schema: {
-    term: z.number().int().positive().describe("Term of the Sejm"),
-    printNumber: z.number().int().positive().describe("Number of the print"),
+    term: term(),
+    printNumber: printNumber("Number of the print, e.g. 1070, or 1070-A for an additional print: the `number` field from get-prints"),
   },
-  handler: async (args: { term: number; printNumber: number }) => {
-    const { term, printNumber } = args;
-    const print = await makeSejmRequest<Print>(
-      `/term${term}/prints/${printNumber}`
-    );
-
-    if (!print.ok) {
-      return {
-        content: [
-          {
-            type: "text" as const,
-            text: `Failed to fetch details for print ${printNumber} in term ${term}.\n\nError: ${print.error.message}`,
-          },
-        ],
-        isError: true,
-      };
-    }
-
-    return {
-      content: [
-        {
-          type: "text" as const,
-          text: `${print.notice ?? ""}Fetched details for print ${printNumber} in term ${term}:\n\n${JSON.stringify(print.data, null, 2)}`,
-        },
-      ],
-    };
-  },
-};
+  outputSchema: objectOutput(PrintSchema),
+  handler: ({ term, printNumber }) =>
+    withTerm(term, async (term) =>
+      buildToolResponse(
+        await makeSejmRequest<Print>(`/term${term}/prints/${printNumber}`),
+        `Fetched details for print ${printNumber} in term ${term}:`,
+        `Failed to fetch details for print ${printNumber} in term ${term}.`
+      )
+    ),
+});

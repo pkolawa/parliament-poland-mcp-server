@@ -1,10 +1,25 @@
 import { z } from "zod";
 import { makeSejmRequest } from "../utils/api.js";
 import { actHtmlToText } from "../utils/html.js";
-import type { Act, ActList, ActReference, ActUnit } from "../types/api.js";
+import {
+  buildToolResponse,
+  defineTool,
+  errorResponse,
+  listOutput,
+  objectOutput,
+  type ToolResponse,
+} from "../utils/tool.js";
+import {
+  ActSchema,
+  ActSummarySchema,
+  type Act,
+  type ActList,
+  type ActReference,
+  type ActUnit,
+} from "../types/api.js";
+import { date, offset } from "./params.js";
 
 const ELI_API_BASE = "https://api.sejm.gov.pl/eli";
-const DATE = /^\d{4}-\d{2}-\d{2}$/;
 // "415", "3a", "18^3a" as printed in the text, or "18_3_a" as named in the structure of the act.
 const ARTICLE = /^\d+[a-z]*(\^[0-9a-z]+|(_[0-9a-z]+)*)$/i;
 
@@ -20,47 +35,40 @@ const MAX_TEXT_LENGTH = 100_000;
 const ACT_TEXT_TIMEOUT_MS = 30_000;
 const MAX_ARTICLE_MATCHES = 5;
 
-const publisher = z
-  .enum(["DU", "MP"])
-  .describe("Journal the act was published in: DU for Dziennik Ustaw or MP for Monitor Polski");
+const publisher = (description: string) => z.enum(["DU", "MP"]).describe(description);
 
 /** Identifies an act by publisher, year and position, which together form its ELI. */
-const actSchema = {
-  publisher: publisher.describe(
+const actParams = () => ({
+  publisher: publisher(
     "Journal the act was published in: DU for Dziennik Ustaw or MP for Monitor Polski. " +
       "The ELI field of a legislative process (get-process, get-passed-processes) such as DU/2024/1 " +
       "is exactly publisher/year/position, and so is the ELI of acts from search-acts"
   ),
   year: z.number().int().positive().describe("Year of publication: the middle part of the ELI (2024 in DU/2024/1)"),
   position: z.number().int().positive().describe("Position in the journal: the last part of the ELI (1 in DU/2024/1)"),
-};
+});
 
-type ActArgs = { publisher: "DU" | "MP"; year: number; position: number };
-
-type ToolResult = { content: { type: "text"; text: string }[]; isError?: boolean };
-
-function failure(text: string): ToolResult {
-  return { content: [{ type: "text", text }], isError: true };
-}
-
-function success(text: string): ToolResult {
-  return { content: [{ type: "text", text }] };
-}
-
-function onlyPdf(eli: string, notice = "") {
-  return success(
-    `${notice}Legal act ${eli} has no HTML text in the ELI API; its text is only in the PDF: ${ELI_API_BASE}/acts/${eli}/text.pdf`
+function onlyPdf(eli: string, notice?: string): ToolResponse {
+  return buildToolResponse(
+    { ok: true, data: `Its text is only in the PDF: ${ELI_API_BASE}/acts/${eli}/text.pdf`, notice },
+    `Legal act ${eli} has no HTML text in the ELI API.`,
+    ""
   );
 }
 
-export const searchActsTool = {
-  description: "Search Polish legal acts in Dziennik Ustaw and Monitor Polski",
+export const searchActsTool = defineTool({
+  title: "Search legal acts",
+  description:
+    "Search Polish legal acts published in Dziennik Ustaw (DU, statutes and regulations) and Monitor Polski " +
+    "(MP, resolutions and announcements) by title, type, keywords, whether they are in force, and dates. " +
+    "Returns a compact list; get-act gives the details of one act and get-act-text its text.",
   schema: {
-    title: z.string().optional().describe("Words to find in the title, in Polish (e.g. kodeks cywilny)"),
-    publisher: publisher.optional(),
+    title: z.string().min(1).optional().describe("Words to find in the title, in Polish (e.g. kodeks cywilny)"),
+    publisher: publisher("Journal: DU for Dziennik Ustaw or MP for Monitor Polski").optional(),
     year: z.number().int().positive().optional().describe("Year of publication"),
     type: z
       .string()
+      .min(1)
       .optional()
       .describe(
         "Type of act, e.g. Ustawa, Rozporządzenie, Obwieszczenie (consolidated texts are announced by one), " +
@@ -71,86 +79,82 @@ export const searchActsTool = {
       .optional()
       .describe("Keywords the acts must all have, exactly as listed by get-act-keywords (e.g. kodeks cywilny)"),
     inForce: z.boolean().optional().describe("true to return only acts in force"),
-    dateFrom: z.string().regex(DATE, "Expected a date in YYYY-MM-DD format").optional().describe("Earliest date of the act (its signing) in YYYY-MM-DD format"),
-    dateTo: z.string().regex(DATE, "Expected a date in YYYY-MM-DD format").optional().describe("Latest date of the act (its signing) in YYYY-MM-DD format"),
-    pubDateFrom: z.string().regex(DATE, "Expected a date in YYYY-MM-DD format").optional().describe("Earliest publication date in YYYY-MM-DD format"),
-    pubDateTo: z.string().regex(DATE, "Expected a date in YYYY-MM-DD format").optional().describe("Latest publication date in YYYY-MM-DD format"),
-    dateEffectFrom: z.string().regex(DATE, "Expected a date in YYYY-MM-DD format").optional().describe("Earliest date of entry into force in YYYY-MM-DD format"),
-    dateEffectTo: z.string().regex(DATE, "Expected a date in YYYY-MM-DD format").optional().describe("Latest date of entry into force in YYYY-MM-DD format"),
+    dateFrom: date("Earliest date of the act (its signing)").optional(),
+    dateTo: date("Latest date of the act (its signing)").optional(),
+    pubDateFrom: date("Earliest publication date").optional(),
+    pubDateTo: date("Latest publication date").optional(),
+    dateEffectFrom: date("Earliest date of entry into force").optional(),
+    dateEffectTo: date("Latest date of entry into force").optional(),
     sortBy: z
       .enum(["publisher", "position", "title", "change"])
       .optional()
-      .describe("Sort by publisher (default; newest acts first within a journal), position, title or change (time of the last change of the act's data)"),
+      .describe(
+        "Sort by publisher (default; newest acts first within a journal), position, title or change " +
+          "(time of the last change of the act's data)"
+      ),
     sortDir: z.enum(["asc", "desc"]).optional().describe("Sort direction"),
-    offset: z.number().int().nonnegative().optional().describe("Offset for pagination"),
+    offset: offset(),
     limit: z
       .number()
       .int()
       .positive()
       .max(MAX_SEARCH_LIMIT)
       .optional()
-      .describe(`Limit for pagination; defaults to ${DEFAULT_SEARCH_LIMIT}`),
+      .describe(`Maximum number of acts to return; defaults to ${DEFAULT_SEARCH_LIMIT}, at most ${MAX_SEARCH_LIMIT}`),
   },
-  handler: async (args: {
-    title?: string;
-    publisher?: "DU" | "MP";
-    year?: number;
-    type?: string;
-    keywords?: string[];
-    inForce?: boolean;
-    dateFrom?: string;
-    dateTo?: string;
-    pubDateFrom?: string;
-    pubDateTo?: string;
-    dateEffectFrom?: string;
-    dateEffectTo?: string;
-    sortBy?: "publisher" | "position" | "title" | "change";
-    sortDir?: "asc" | "desc";
-    offset?: number;
-    limit?: number;
-  }) => {
-    const { keywords, inForce: onlyInForce, limit, ...filters } = args;
-    const acts = await makeSejmRequest<ActList>(
-      "/acts/search",
-      {
-        ...filters,
-        keyword: keywords?.join(","),
-        inForce: onlyInForce ? "1" : undefined,
-        limit: limit ?? DEFAULT_SEARCH_LIMIT,
-      },
-      { api: "eli" }
-    );
-
-    if (!acts.ok) {
-      return failure(`Failed to search legal acts.\n\nError: ${acts.error.message}`);
-    }
-
-    const { totalCount, offset, count } = acts.data;
-    // Search results carry every detail of an act, references included; get-act returns them for one act.
-    const items = acts.data.items.map(
-      ({ ELI, displayAddress, title, type, status, inForce, announcementDate, promulgation, entryIntoForce, textHTML }) => ({
-        ELI,
-        displayAddress,
-        title,
-        type,
-        status,
-        inForce,
-        announcementDate,
-        promulgation,
-        entryIntoForce,
-        textHTML,
+  outputSchema: objectOutput(
+    z
+      .object({
+        totalCount: z.number().nullish().describe("Number of acts that match the search"),
+        offset: z.number().nullish(),
+        count: z.number().nullish().describe("Number of acts in this response"),
+        items: z.array(ActSummarySchema),
       })
-    );
-    const range =
-      count < totalCount
-        ? `; showing ${offset + 1}-${offset + count}${offset + count < totalCount ? `, pass offset=${offset + count} for more` : ""}`
-        : "";
-
-    return success(
-      `${acts.notice ?? ""}Found ${totalCount} legal acts${range}:\n\n${JSON.stringify(items, null, 2)}`
-    );
-  },
-};
+      .passthrough()
+  ),
+  handler: async ({ keywords, inForce, limit, ...filters }) =>
+    buildToolResponse(
+      await makeSejmRequest<ActList>(
+        "/acts/search",
+        {
+          ...filters,
+          keyword: keywords?.join(","),
+          inForce: inForce ? "1" : undefined,
+          limit: limit ?? DEFAULT_SEARCH_LIMIT,
+        },
+        { api: "eli" }
+      ),
+      ({ totalCount, offset, count }: { totalCount: number; offset: number; count: number }) => {
+        const range =
+          count < totalCount
+            ? `; showing ${offset + 1}-${offset + count}` +
+              (offset + count < totalCount ? `, pass offset=${offset + count} for more` : "")
+            : "";
+        return `Found ${totalCount} legal acts${range}:`;
+      },
+      "Failed to search legal acts.",
+      // Search results carry every detail of an act, references included; get-act returns them for one act.
+      (list) => ({
+        totalCount: list.totalCount ?? 0,
+        offset: list.offset ?? 0,
+        count: list.count ?? 0,
+        items: (list.items ?? []).map(
+          ({ ELI, displayAddress, title, type, status, inForce, announcementDate, promulgation, entryIntoForce, textHTML }) => ({
+            ELI,
+            displayAddress,
+            title,
+            type,
+            status,
+            inForce,
+            announcementDate,
+            promulgation,
+            entryIntoForce,
+            textHTML,
+          })
+        ),
+      })
+    ),
+});
 
 function referenceCount(references: Record<string, ActReference[]>): number {
   return Object.values(references).reduce((sum, list) => sum + list.length, 0);
@@ -163,55 +167,62 @@ function byNewest(a: ActReference, b: ActReference): number {
   return yearB - yearA || posB - posA;
 }
 
-export const getActTool = {
-  description: "Get details of a Polish legal act",
+export const getActTool = defineTool({
+  title: "Get a legal act",
+  description:
+    "Get the details of a Polish legal act: status, dates, keywords, issuing authority, the Sejm prints of " +
+    "the bill and references to other acts (amending acts, consolidated texts, implementing acts…). " +
+    "Long reference lists are summarized per type; referenceType lists one type in full.",
   schema: {
-    ...actSchema,
+    ...actParams(),
     referenceType: z
       .string()
+      .min(1)
       .optional()
       .describe(
         "Return all references of one type, e.g. Akty zmieniające (amending acts), Akty wykonawcze (implementing acts), " +
           "Inf. o tekście jednolitym (consolidated texts), Akty uchylone (repealed acts) or Podstawa prawna (legal basis)"
       ),
   },
-  handler: async (args: ActArgs & { referenceType?: string }) => {
-    const { publisher, year, position, referenceType } = args;
+  outputSchema: objectOutput(ActSchema),
+  handler: async ({ publisher, year, position, referenceType }) => {
     const eli = `${publisher}/${year}/${position}`;
-    const act = await makeSejmRequest<Act>(`/acts/${eli}`, undefined, { api: "eli" });
-
-    if (!act.ok) {
-      return failure(`Failed to fetch legal act ${eli}.\n\nError: ${act.error.message}`);
-    }
-
-    const { references = {}, ...details } = act.data;
-    const total = referenceCount(references);
+    // Set while shaping the data and shown before it: why the references are summarized or missing.
     let note = "";
-    let shownReferences: unknown = references;
-    if (referenceType !== undefined) {
-      shownReferences = { [referenceType]: references[referenceType] ?? [] };
-      if (!(referenceType in references)) {
-        const types = Object.keys(references);
-        note = `The act has no references of type "${referenceType}"; its reference types are: ${types.length ? types.join(", ") : "none"}.\n\n`;
-      }
-    } else if (total > MAX_LISTED_REFERENCES) {
-      shownReferences = Object.fromEntries(
-        Object.entries(references).map(([type, list]) => [
-          type,
-          { count: list.length, newest: [...list].sort(byNewest).slice(0, NEWEST_REFERENCES) },
-        ])
-      );
-      note =
-        `The act has ${total} references to other acts, so only their number and the newest ${NEWEST_REFERENCES} ` +
-        "of each type are shown; pass referenceType to list all references of one type.\n\n";
-    }
 
-    return success(
-      `${act.notice ?? ""}Fetched legal act ${eli} (${details.displayAddress}):\n\n${note}` +
-        JSON.stringify({ ...details, references: shownReferences }, null, 2)
+    return buildToolResponse(
+      await makeSejmRequest<Act>(`/acts/${eli}`, undefined, { api: "eli" }),
+      (act) => `Fetched legal act ${eli} (${act.displayAddress}):${note ? `\n\n${note}` : ""}`,
+      `Failed to fetch legal act ${eli}.`,
+      (act): Act => {
+        const { references, ...details } = act;
+        const all = (references ?? {}) as Record<string, ActReference[]>;
+        const total = referenceCount(all);
+        let shown: Record<string, unknown> = all;
+
+        if (referenceType !== undefined) {
+          shown = { [referenceType]: all[referenceType] ?? [] };
+          if (!(referenceType in all)) {
+            const types = Object.keys(all);
+            note = `The act has no references of type "${referenceType}"; its reference types are: ${types.length ? types.join(", ") : "none"}.`;
+          }
+        } else if (total > MAX_LISTED_REFERENCES) {
+          shown = Object.fromEntries(
+            Object.entries(all).map(([type, list]) => [
+              type,
+              { count: list.length, newest: [...list].sort(byNewest).slice(0, NEWEST_REFERENCES) },
+            ])
+          );
+          note =
+            `The act has ${total} references to other acts, so only their number and the newest ${NEWEST_REFERENCES} ` +
+            "of each type are shown; pass referenceType to list all references of one type.";
+        }
+
+        return { ...details, references: shown };
+      }
     );
   },
-};
+});
 
 /** Converts an article as printed (18^3a) to its name in the structure of the act (18_3_a). */
 function articleName(article: string): string {
@@ -249,19 +260,21 @@ function articleNames(units: ActUnit[]): string[] {
   ]);
 }
 
-export const getActTextTool = {
-  description: "Get the text of a Polish legal act or of one of its articles",
+export const getActTextTool = defineTool({
+  title: "Get the text of a legal act",
+  description:
+    "Get the text of a Polish legal act, or of one of its articles, as plain text. Whole acts come in pages " +
+    `of ${DEFAULT_TEXT_LENGTH.toLocaleString("en")} characters by default (codes are over 400,000); continue with offset. ` +
+    "The text is the act as published: the current wording of an amended act is in its newest consolidated text " +
+    "(references of type Inf. o tekście jednolitym in get-act). Acts published only as a PDF return the PDF link.",
   schema: {
-    ...actSchema,
+    ...actParams(),
     article: z
       .string()
       .regex(ARTICLE, "Expected an article number such as 415, 3a or 18^3a")
       .optional()
       .describe(
-        "Return only this article, e.g. 415, 3a or 18^3a for Art. 18 with superscript 3a. " +
-          "Omit to get the whole act, which for codes is over 400,000 characters. " +
-          "The text is the act as published; the current wording of an amended act is in its newest " +
-          "consolidated text (references of type Inf. o tekście jednolitym in get-act)"
+        "Return only this article, e.g. 415, 3a or 18^3a for Art. 18 with superscript 3a; omit to get the whole act"
       ),
     offset: z
       .number()
@@ -277,8 +290,7 @@ export const getActTextTool = {
       .optional()
       .describe(`Maximum number of characters to return; defaults to ${DEFAULT_TEXT_LENGTH}`),
   },
-  handler: async (args: ActArgs & { article?: string; offset?: number; maxLength?: number }) => {
-    const { publisher, year, position, article, offset = 0, maxLength = DEFAULT_TEXT_LENGTH } = args;
+  handler: async ({ publisher, year, position, article, offset = 0, maxLength = DEFAULT_TEXT_LENGTH }) => {
     const eli = `${publisher}/${year}/${position}`;
     const subject = article ? `article ${article} of legal act ${eli}` : `legal act ${eli}`;
     let text: string;
@@ -294,18 +306,17 @@ export const getActTextTool = {
             return onlyPdf(eli, act.notice);
           }
         }
-        return failure(`Failed to fetch the structure of legal act ${eli}.\n\nError: ${structure.error.message}`);
+        return errorResponse(`Failed to fetch the structure of legal act ${eli}.`, structure.error.message);
       }
 
       const matches = findArticles(structure.data, articleName(article)).slice(0, MAX_ARTICLE_MATCHES);
       if (matches.length === 0) {
         const names = articleNames(structure.data);
-        const listed = names.slice(0, 30).join(", ");
-        return failure(
-          `Article ${article} was not found in legal act ${eli}. ` +
-            (names.length
-              ? `The act has ${names.length} articles: ${listed}${names.length > 30 ? ", ..." : ""}`
-              : "The act has no articles; get its whole text instead.")
+        return errorResponse(
+          `Article ${article} was not found in legal act ${eli}.`,
+          names.length
+            ? `The act has ${names.length} articles: ${names.slice(0, 30).join(", ")}${names.length > 30 ? ", ..." : ""}`
+            : "The act has no articles; get its whole text instead."
         );
       }
 
@@ -319,7 +330,7 @@ export const getActTextTool = {
       const articles: string[] = [];
       for (const [i, fragment] of fragments.entries()) {
         if (!fragment.ok) {
-          return failure(`Failed to fetch the text of ${subject}.\n\nError: ${fragment.error.message}`);
+          return errorResponse(`Failed to fetch the text of ${subject}.`, fragment.error.message);
         }
         notice ??= fragment.notice;
         const articleText = actHtmlToText(fragment.data);
@@ -337,7 +348,7 @@ export const getActTextTool = {
         timeoutMs: ACT_TEXT_TIMEOUT_MS,
       });
       if (!response.ok) {
-        return failure(`Failed to fetch the text of ${subject}.\n\nError: ${response.error.message}`);
+        return errorResponse(`Failed to fetch the text of ${subject}.`, response.error.message);
       }
       text = actHtmlToText(response.data);
       notice = response.notice;
@@ -348,7 +359,10 @@ export const getActTextTool = {
       return onlyPdf(eli, notice);
     }
     if (offset >= text.length) {
-      return failure(`Offset ${offset} is beyond the end of the text of ${subject}, which has ${text.length} characters.`);
+      return errorResponse(
+        `Offset ${offset} is beyond the end of the text of ${subject}.`,
+        `The text has ${text.length} characters.`
+      );
     }
 
     let end = Math.min(offset + maxLength, text.length);
@@ -359,44 +373,45 @@ export const getActTextTool = {
         end = lineEnd;
       }
     }
-    const range = `characters ${offset}-${end} of ${text.length}`;
     const more =
       end < text.length
         ? `\n\n[Truncated: ${text.length - end} more characters. Call again with offset=${end} to continue` +
           `${article ? "" : " or pass article to get a single article"}.]`
         : "";
 
-    return success(
-      `${notice ?? ""}Fetched the text of ${subject} (${range}):\n\n${text.slice(offset, end).trim()}${more}`
+    return buildToolResponse(
+      { ok: true, data: `${text.slice(offset, end).trim()}${more}`, notice },
+      `Fetched the text of ${subject} (characters ${offset}-${end} of ${text.length}):`,
+      ""
     );
   },
-};
+});
 
 /** Lower case without diacritics, so that "podatek" also finds "Podatek" and "zrodla" finds "źródła". */
 function fold(text: string): string {
   return text.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/ł/g, "l");
 }
 
-export const getActKeywordsTool = {
-  description: "List keywords used to classify Polish legal acts",
+export const getActKeywordsTool = defineTool({
+  title: "List keywords of legal acts",
+  description:
+    "List the keywords used to classify Polish legal acts, optionally only those containing a phrase. " +
+    "search-acts matches keywords exactly (cywilny finds no acts, kodeks cywilny finds hundreds), so look them up here first.",
   schema: {
     query: z
       .string()
+      .min(1)
       .optional()
       .describe("Part of a keyword to look for, ignoring case and Polish diacritics (e.g. podat); omit to list all of about 2,500"),
   },
-  handler: async (args: { query?: string }) => {
-    const { query } = args;
-    const keywords = await makeSejmRequest<string[]>("/keywords", undefined, { api: "eli" });
-
-    if (!keywords.ok) {
-      return failure(`Failed to fetch the keywords of legal acts.\n\nError: ${keywords.error.message}`);
-    }
-
+  outputSchema: listOutput(z.string().describe("Keyword, as accepted by the keywords of search-acts")),
+  handler: async ({ query }) => {
     const needle = fold(query ?? "");
-    const matching = keywords.data.filter((keyword) => fold(keyword).includes(needle));
-    return success(
-      `${keywords.notice ?? ""}Found ${matching.length} keywords of legal acts${query ? ` matching "${query}"` : ""}:\n\n${matching.join("\n")}`
+    return buildToolResponse(
+      await makeSejmRequest<string[]>("/keywords", undefined, { api: "eli" }),
+      (matching) => `Found ${matching.length} keywords of legal acts${query ? ` matching "${query}"` : ""}:`,
+      "Failed to fetch the keywords of legal acts.",
+      (keywords) => keywords.filter((keyword) => fold(keyword).includes(needle))
     );
   },
-};
+});

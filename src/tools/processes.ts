@@ -1,79 +1,60 @@
 import { z } from "zod";
 import { makeSejmRequest } from "../utils/api.js";
-import type { LegislativeProcess } from "../types/api.js";
+import { buildToolResponse, defineTool, listOutput, withTerm } from "../utils/tool.js";
+import { LegislativeProcessSchema, type LegislativeProcess } from "../types/api.js";
+import { limit, offset, term, title } from "./params.js";
 
-export const getProcessesTool = {
-  description: "Get a list of legislative processes for a given term",
+const documentType = () =>
+  z.string().min(1).optional().describe("Type of the document, in Polish (e.g. projekt ustawy)");
+
+export const getProcessesTool = defineTool({
+  title: "List legislative processes",
+  description:
+    "List legislative processes (procesy legislacyjne: bills and draft resolutions going through the Sejm) in a term " +
+    "with their number, title, document type, dates and whether they passed. " +
+    "Get the stages of one process with get-process.",
   schema: {
-    term: z.number().int().positive().describe("Term of the Sejm"),
-    offset: z.number().int().nonnegative().optional().describe("Offset for pagination"),
-    limit: z.number().int().positive().optional().describe("Limit for pagination"),
+    term: term(),
+    title: title("process"),
+    documentType: documentType(),
+    offset: offset(),
+    limit: limit(),
   },
-  handler: async (args: { term: number, offset?: number, limit?: number }) => {
-    const { term, offset, limit } = args;
-    const processes = await makeSejmRequest<LegislativeProcess[]>(
-      `/term${term}/processes`,
-      { offset, limit },
-    );
+  outputSchema: listOutput(LegislativeProcessSchema),
+  handler: ({ term, title, documentType, offset, limit }) =>
+    withTerm(term, async (term) =>
+      buildToolResponse(
+        await makeSejmRequest<LegislativeProcess[]>(`/term${term}/processes`, { title, documentType, offset, limit }),
+        `Fetched the list of processes for term ${term}:`,
+        `Failed to fetch the list of processes for term ${term}`
+      )
+    ),
+});
 
-    if (!processes.ok) {
-      return {
-        content: [
-          {
-            type: "text" as const,
-            text: `Failed to fetch the list of processes for term ${term}\n\nError: ${processes.error.message}`,
-          },
-        ],
-        isError: true,
-      };
-    }
-
-    return {
-      content: [
-        {
-          type: "text" as const,
-          text: `${processes.notice ?? ""}Fetched the list of processes for term ${term}:\n\n${JSON.stringify(processes.data, null, 2)}`,
-        },
-      ],
-    };
-  },
-};
-
-export const getPassedProcessesTool = {
-  description: "Get a list of passed legislative processes for a given term",
+export const getPassedProcessesTool = defineTool({
+  title: "List passed legislative processes",
+  description:
+    "List legislative processes that ended with the act being passed (uchwalone) in a term, with the title of the " +
+    "act as passed and the ELI and citation (Dz.U./M.P.) of the published act.",
   schema: {
-    term: z.number().int().positive().describe("Term of the Sejm"),
-    title: z.string().optional().describe("Phrase to search for in the title, in Polish (e.g. kodeksu pracy)"),
-    documentType: z.string().optional().describe("Type of the document, in Polish (e.g. projekt ustawy)"),
-    offset: z.number().int().nonnegative().optional().describe("Offset for pagination"),
-    limit: z.number().int().positive().optional().describe("Limit for pagination"),
+    term: term(),
+    title: title("process"),
+    documentType: documentType(),
+    offset: offset(),
+    limit: limit(),
   },
-  handler: async (args: { term: number, title?: string, documentType?: string, offset?: number, limit?: number }) => {
-    const { term, title, documentType, offset, limit } = args;
-    const processes = await makeSejmRequest<LegislativeProcess[]>(
-      `/term${term}/processes/passed`,
-      { title, documentType, offset, limit },
-    );
-
-    if (!processes.ok) {
-      return {
-        content: [
-          {
-            type: "text" as const,
-            text: `Failed to fetch the list of passed processes for term ${term}.\n\nError: ${processes.error.message}`,
-          },
-        ],
-        isError: true,
-      };
-    }
-
-    return {
-      content: [
-        {
-          type: "text" as const,
-          text: `${processes.notice ?? ""}Fetched the list of passed processes for term ${term}:\n\n${JSON.stringify(processes.data, null, 2)}`,
-        },
-      ],
-    };
-  },
-};
+  outputSchema: listOutput(LegislativeProcessSchema),
+  handler: ({ term, title, documentType, offset, limit }) =>
+    withTerm(term, async (term) =>
+      buildToolResponse(
+        await makeSejmRequest<LegislativeProcess[]>(`/term${term}/processes/passed`, {
+          title,
+          documentType,
+          offset,
+          limit,
+        }),
+        `Fetched the list of passed processes for term ${term}:`,
+        `Failed to fetch the list of passed processes for term ${term}.`
+      )
+    ),
+});
