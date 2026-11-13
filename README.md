@@ -80,7 +80,45 @@ Tools that return data (all except the two text tools) declare an `outputSchema`
 
 Version 2.0 makes the tools easier for LLMs to use and contains breaking changes:
 
-- **Tool names.** Tools are registered under short kebab-case names, e.g. `get-members` instead of `Get-a-list-of-MPs-for-a-given-term`. Update any client configuration, allow-lists or prompts that refer to the old names. The old name of each tool was its 1.x description with spaces replaced by dashes.
+- **Tool names.** Tools are registered under short kebab-case names, e.g. `get-members` instead of `Get-a-list-of-MPs-for-a-given-term`. Update any client configuration, allow-lists or prompts that refer to the old names:
+
+  <details><summary>Old and new tool names</summary>
+
+  | 2.0 | 1.x |
+  | --- | --- |
+  | `get-terms` | `Get-a-list-of-Sejm-terms` |
+  | `get-members` | `Get-a-list-of-MPs-for-a-given-term` |
+  | `get-member` | `Get-information-about-a-member-of-Parliament` |
+  | `get-mp-voting-stats` | `Get-voting-attendance-statistics-of-an-MP-for-each-sitting-day` |
+  | `get-mp-votings` | `Get-how-an-MP-voted-on-a-given-sitting-day` |
+  | `get-clubs` | `Get-a-list-of-clubs-for-a-given-term` |
+  | `get-club` | `Get-detailed-information-about-a-specific-club` |
+  | `get-committees` | `Get-a-list-of-committees-for-a-given-term` |
+  | `get-committee` | `Get-detailed-information-about-a-specific-committee` |
+  | `get-committee-sittings` | `Get-a-list-of-sittings-of-a-committee` |
+  | `get-committee-sitting` | `Get-details-about-a-single-committee-sitting` |
+  | `get-interpellations` | `Get-a-list-of-interpellations-for-a-given-term` |
+  | `get-interpellation` | `Get-detailed-information-about-a-specific-interpellation` |
+  | `get-interpellation-text` | `Get-the-text-of-an-interpellation-or-of-a-reply-to-it` |
+  | `get-prints` | `Get-a-list-of-prints-for-a-given-term` |
+  | `get-print` | `Get-detailed-information-about-a-specific-print` |
+  | `get-proceedings` | `Get-a-list-of-proceedings-for-a-given-term` |
+  | `get-current-proceeding` | `Get-the-current-or-next-sitting-of-the-Sejm-with-its-agenda` |
+  | `get-process` | `Get-information-about-a-specific-legislative-process` |
+  | `get-processes` | `Get-a-list-of-legislative-processes-for-a-given-term` |
+  | `get-passed-processes` | `Get-a-list-of-passed-legislative-processes-for-a-given-term` |
+  | `get-transcripts` | `Get-the-list-of-transcript-statements-for-a-Sejm-sitting-day` |
+  | `get-statement` | `Get-the-text-of-a-single-statement-from-a-Sejm-sitting-transcript` |
+  | `get-videos` | `Get-a-list-of-video-recordings-for-a-given-term` |
+  | `get-videos-by-date` | `Get-video-transmissions-from-a-given-day` |
+  | `get-votings` | `Get-a-list-of-votings-for-a-given-term` |
+  | `get-voting` | `Get-the-results-of-a-single-voting-with-a-breakdown-by-club` |
+  | `search-votings` | `Search-for-votings-in-a-given-term` |
+  | `get-written-questions` | `Get-a-list-of-written-questions-for-a-given-term` |
+  | `get-bilateral-groups` | `Get-a-list-of-bilateral-groups-in-the-Sejm` |
+
+  </details>
+
 - **`term` is optional** everywhere and defaults to the current term.
 - **Responses** contain compact JSON (no indentation) instead of pretty-printed JSON, and JSON tools also return `structuredContent` matching their `outputSchema`. The text messages before the data are unchanged.
 - **`get-interpellations`** sends its filters to the API under the names the API supports, so `dateFrom`, `dateTo` and `mp` now actually filter the results. The `number`, `club` and `status` parameters, which the API never supported, are removed; use `get-interpellation` for a single interpellation and `delayed: true` for interpellations with an overdue answer. New parameters: `recipient`, `modifiedSince`, `delayed`.
