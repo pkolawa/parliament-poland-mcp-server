@@ -261,7 +261,7 @@ export const VoteSchema = obj({
   secondName: str(),
   club: str(),
   vote: str().describe("YES, NO, ABSTAIN, ABSENT; VOTE_VALID for votings on a list"),
-  listVotes: z.record(z.unknown()).nullish().describe("Votes per option for votings on a list"),
+  listVotes: z.record(z.string(), z.unknown()).nullish().describe("Votes per option for votings on a list"),
 });
 export type Vote = z.infer<typeof VoteSchema>;
 
@@ -271,7 +271,7 @@ export type VotingDetails = z.infer<typeof VotingDetailsSchema>;
 export const VotingResultSchema = obj({
   ...votingShape,
   votesByClub: z
-    .record(z.record(z.number()))
+    .record(z.string(), z.record(z.string(), z.number()))
     .describe("Number of votes of each kind (YES, NO, ABSTAIN, ABSENT…) per club"),
   votes: z.array(VoteSchema).nullish().describe("How each MP voted, when requested"),
 });
@@ -294,7 +294,7 @@ export const MpVoteSchema = obj({
   description: str(),
   kind: str(),
   vote: str().describe("YES, NO, ABSTAIN, ABSENT; VOTE_VALID for votings on a list"),
-  listVotes: z.record(z.unknown()).nullish(),
+  listVotes: z.record(z.string(), z.unknown()).nullish(),
 });
 export type MpVote = z.infer<typeof MpVoteSchema>;
 

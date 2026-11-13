@@ -2,6 +2,9 @@ import { z } from "zod";
 import { makeSejmRequest, type SejmApiError, type SejmApiResult } from "./api.js";
 import type { Term } from "../types/api.js";
 
+/** Any object schema; `z.AnyZodObject` does not exist in Zod 4. */
+export type ObjectSchema = z.ZodObject<any, any>;
+
 export interface ToolResponse {
   [key: string]: unknown;
   content: { type: "text"; text: string }[];
@@ -16,7 +19,7 @@ export interface ToolDefinition<Shape extends z.ZodRawShape> {
   description: string;
   schema: Shape;
   /** Schema of `structuredContent`; absent for tools that return plain text. */
-  outputSchema?: z.AnyZodObject;
+  outputSchema?: ObjectSchema;
   handler: (args: z.infer<z.ZodObject<Shape>>) => Promise<ToolResponse>;
 }
 
@@ -31,12 +34,12 @@ const notice = z
   .describe("Set when the Sejm API is unavailable and the data comes from a cache; it may be out of date");
 
 /** Output schema of a tool that returns a list: `{ items: [...] }`. */
-export function listOutput(item: z.ZodTypeAny): z.AnyZodObject {
+export function listOutput(item: z.ZodType): ObjectSchema {
   return z.object({ items: z.array(item), notice });
 }
 
 /** Output schema of a tool that returns a single object. */
-export function objectOutput(schema: z.AnyZodObject): z.AnyZodObject {
+export function objectOutput(schema: ObjectSchema): ObjectSchema {
   return schema.extend({ notice });
 }
 
@@ -100,10 +103,10 @@ export async function resolveTerm(term: number | undefined): Promise<TermResult>
     return terms;
   }
 
-  const numbers = terms.data.filter((t) => typeof t.num === "number");
-  const current = numbers.find((t) => t.current) ?? numbers.sort((a, b) => b.num! - a.num!)[0];
+  const numbered = terms.data.filter((t): t is Term & { num: number } => typeof t.num === "number");
+  const current = numbered.find((t) => t.current) ?? numbered.sort((a, b) => b.num - a.num)[0];
   return current
-    ? { ok: true, term: current.num! }
+    ? { ok: true, term: current.num }
     : { ok: false, error: { message: "The Sejm API returned no terms." } };
 }
 

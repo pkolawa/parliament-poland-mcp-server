@@ -31,7 +31,9 @@ export const getVideosByDateTool = defineTool({
     "with title, type, room, start time and links to the player and the video.",
   schema: {
     term: term(),
-    date: date("Day of the transmissions; omit for today").optional(),
+    date: date("Day of the transmissions")
+      .optional()
+      .describe("Day of the transmissions, in YYYY-MM-DD format; defaults to today"),
   },
   outputSchema: listOutput(VideoSchema),
   handler: ({ term, date }) =>
