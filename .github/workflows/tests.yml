@@ -29,18 +29,42 @@ jobs:
       - name: Smoke test the built server
         run: npm run test:smoke
 
+  # Informational only: the Sejm API is outside our control, so its outages must not
+  # turn a PR red. The job passes either way and reports the results in its summary.
+  # The daily live-api-tests workflow on main is the API health check.
   live-api:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+      - name: Probe Sejm API
+        id: probe
+        run: |
+          status=$(curl -sS -o /dev/null -w '%{http_code}' --max-time 20 --retry 2 --retry-delay 5 \
+            https://api.sejm.gov.pl/sejm/term || true)
+          echo "status=${status:-000}" >> "$GITHUB_OUTPUT"
+          # 000 means no HTTP response (timeout, DNS or connection error).
+          if [[ "${status:-000}" == 000 || "$status" == 5* ]]; then
+            echo "available=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "available=true" >> "$GITHUB_OUTPUT"
+          fi
       - name: Setup Node
         uses: actions/setup-node@v7
         with:
           node-version-file: .nvmrc
-          cache: npm
+          # Without npm ci there is nothing to cache, and the post step would warn about it.
+          cache: ${{ steps.probe.outputs.available == 'true' && 'npm' || '' }}
       - name: Install dependencies
+        if: steps.probe.outputs.available == 'true'
         run: npm ci
       - name: Run live API tests
-        run: npm run test:live-api
+        if: steps.probe.outputs.available == 'true'
+        continue-on-error: true
+        run: npm run test:live-api -- --json --outputFile="$RUNNER_TEMP/live-api-results.json"
+      - name: Report results
+        if: always()
+        env:
+          PROBE_STATUS: ${{ steps.probe.outputs.status }}
+        run: node scripts/live-api-summary.mjs "$RUNNER_TEMP/live-api-results.json"

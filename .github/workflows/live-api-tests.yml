@@ -1,5 +1,8 @@
 name: live-api-tests
 
+# Daily health check of the Sejm API against the tools on main. Unlike the live-api
+# job on pull requests, this workflow fails when the API is down or has changed.
+
 on:
   schedule:
     # GitHub Actions cron is in UTC.
@@ -27,4 +30,8 @@ jobs:
         run: npm ci
 
       - name: Run live API tests
-        run: npm run test:live-api
+        run: npm run test:live-api -- --json --outputFile="$RUNNER_TEMP/live-api-results.json"
+
+      - name: Report results
+        if: always()
+        run: node scripts/live-api-summary.mjs "$RUNNER_TEMP/live-api-results.json"

@@ -36,6 +36,7 @@ Tool pattern: handler calls `makeSejmRequest`, returns `{ content: [{ type: "tex
 
 - Unit tests mock `makeSejmRequest` via `jest.mock`
 - Integration tests (`tests/integration/`) call the real API — gated by `RUN_LIVE_API_TESTS=true`
+- CI: the `live-api` job on PRs is informational (skipped when the API probe gets 5xx, never fails the PR); the daily `live-api-tests` workflow on main is the API health check
 - Each tool has its own test file in `tests/tools/`
 
 ## Build
