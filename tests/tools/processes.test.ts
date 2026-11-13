@@ -1,6 +1,6 @@
 import { jest } from "@jest/globals";
 import { makeSejmRequest } from "../../src/utils/api.js";
-import { getProcessesTool } from "../../src/tools/processes.js";
+import { getProcessesTool, getPassedProcessesTool } from "../../src/tools/processes.js";
 
 type MakeSejmRequestFn = (
   endpoint: string,
@@ -45,6 +45,34 @@ describe("getProcessesTool", () => {
       "Failed to fetch the list of processes for term 10"
     );
     expect(result.content[0].text).toContain("Error: HTTP 404 Not Found");
+    expect(result.isError).toBe(true);
+  });
+});
+
+describe("getPassedProcessesTool", () => {
+  it("returns a success message with data", async () => {
+    makeSejmRequestMock.mockResolvedValue({ ok: true, data: [{ number: "1" }] });
+
+    const result = await getPassedProcessesTool.handler({ term: 10, title: "kodeksu pracy", limit: 2 });
+
+    expect(makeSejmRequestMock).toHaveBeenCalledWith("/term10/processes/passed", {
+      title: "kodeksu pracy",
+      documentType: undefined,
+      offset: undefined,
+      limit: 2,
+    });
+    expect(result.content[0].text).toContain("Fetched the list of passed processes for term 10:");
+  });
+
+  it("returns a failure message when the API fails", async () => {
+    makeSejmRequestMock.mockResolvedValue({
+      ok: false,
+      error: { status: 404, message: "HTTP 404 Not Found for /sejm/test" },
+    });
+
+    const result = await getPassedProcessesTool.handler({ term: 10 });
+
+    expect(result.content[0].text).toContain("Failed to fetch the list of passed processes for term 10.");
     expect(result.isError).toBe(true);
   });
 });

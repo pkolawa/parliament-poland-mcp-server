@@ -23,6 +23,11 @@ export interface SejmApiError {
   message: string;
 }
 
+export interface SejmRequestOptions {
+  /** "html" for endpoints that return an HTML document, such as statement or interpellation bodies. */
+  format?: "json" | "html";
+}
+
 export type SejmApiResult<T> =
   /** `notice` is set when the data comes from the cache because the API is unavailable. */
   | { ok: true; data: T; notice?: string }
@@ -58,14 +63,14 @@ function parseRetryAfter(header: string | null): number | undefined {
   return header && Number.isFinite(seconds) && seconds >= 0 ? seconds * 1000 : undefined;
 }
 
-async function fetchOnce<T>(url: URL): Promise<Attempt<T>> {
+async function fetchOnce<T>(url: URL, format: "json" | "html"): Promise<Attempt<T>> {
   try {
     const res = await fetch(url.toString(), {
-      headers: { Accept: "application/json" },
+      headers: { Accept: format === "html" ? "text/html" : "application/json" },
       signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
     });
     if (res.ok) {
-      return { ok: true, data: (await res.json()) as T };
+      return { ok: true, data: (format === "html" ? await res.text() : await res.json()) as T };
     }
     const retryable = RETRYABLE_STATUSES.has(res.status);
     return {
@@ -101,8 +106,10 @@ function sleep(ms: number): Promise<void> {
 
 export async function makeSejmRequest<T>(
   endpoint: string,
-  params?: Record<string, string | number | boolean | undefined>
+  params?: Record<string, string | number | boolean | undefined>,
+  options: SejmRequestOptions = {}
 ): Promise<SejmApiResult<T>> {
+  const format = options.format ?? "json";
   const url = new URL(`${SEJM_API_BASE}${endpoint}`);
   if (params) {
     Object.entries(params).forEach(([key, value]) => {
@@ -122,7 +129,7 @@ export async function makeSejmRequest<T>(
     return { ok: true, data: cached.data as T };
   }
 
-  let attempt = await fetchOnce<T>(url);
+  let attempt = await fetchOnce<T>(url, format);
   let attempts = 1;
   for (const delay of RETRY_DELAYS_MS) {
     if (attempt.ok || !attempt.retryable) {
@@ -130,7 +137,7 @@ export async function makeSejmRequest<T>(
     }
     console.error(`Sejm API request error, retrying: ${attempt.error.message}`);
     await sleep(Math.min(attempt.retryAfterMs ?? delay, MAX_RETRY_AFTER_MS));
-    attempt = await fetchOnce<T>(url);
+    attempt = await fetchOnce<T>(url, format);
     attempts++;
   }
 

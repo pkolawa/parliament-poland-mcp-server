@@ -62,6 +62,18 @@ describe("makeSejmRequest", () => {
     expect(options.signal).toBeInstanceOf(AbortSignal);
   });
 
+  it("requests and returns HTML as text when asked for the html format", async () => {
+    fetchMock.mockImplementation(() =>
+      Promise.resolve(new Response("<p>Tekst</p>", { status: 200, headers: { "content-type": "text/html" } }))
+    );
+
+    const result = await makeSejmRequest("/term10/interpellations/10/body", undefined, { format: "html" });
+
+    expect(result).toEqual({ ok: true, data: "<p>Tekst</p>" });
+    const [, options] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(options.headers).toEqual({ Accept: "text/html" });
+  });
+
   it("returns the HTTP status and a hint to check parameters on 404 without retrying", async () => {
     const errorSpy = jest.mocked(console.error);
     fetchMock.mockImplementation(() => status(404, "Not Found"));

@@ -2,6 +2,8 @@ import { z } from "zod";
 import { tools } from "../../src/tools/index.js";
 import { getProcessTool } from "../../src/tools/process.js";
 import { getTranscriptsTool } from "../../src/tools/transcripts.js";
+import { getCommitteeSittingsTool } from "../../src/tools/committees.js";
+import { getInterpellationTextTool } from "../../src/tools/interpellations.js";
 
 const toolsWithOffset = Object.entries(tools).filter(
   ([, tool]) => "offset" in tool.schema
@@ -28,5 +30,16 @@ describe("tool input schemas", () => {
 
     expect(schema.safeParse({ term: 10, proceeding: 1, date: "2023-11-13" }).success).toBe(true);
     expect(schema.safeParse({ term: 10, proceeding: 1, date: "13.11.2023" }).success).toBe(false);
+  });
+
+  it("path segments built from strings reject anything but plain codes", () => {
+    const sittings = z.object(getCommitteeSittingsTool.schema);
+    const text = z.object(getInterpellationTextTool.schema);
+
+    expect(sittings.safeParse({ term: 10, code: "ASW" }).success).toBe(true);
+    expect(sittings.safeParse({ term: 10, code: "../MP" }).success).toBe(false);
+    expect(sittings.safeParse({ term: 10, code: "ASW", dateFrom: "2024-1-1" }).success).toBe(false);
+    expect(text.safeParse({ term: 10, num: 10, replyKey: "CZLJNC" }).success).toBe(true);
+    expect(text.safeParse({ term: 10, num: 10, replyKey: "a/b" }).success).toBe(false);
   });
 });

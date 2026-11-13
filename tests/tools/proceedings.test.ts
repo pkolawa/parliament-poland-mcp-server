@@ -1,6 +1,6 @@
 import { jest } from "@jest/globals";
 import { makeSejmRequest } from "../../src/utils/api.js";
-import { getProceedingsTool } from "../../src/tools/proceedings.js";
+import { getProceedingsTool, getCurrentProceedingTool } from "../../src/tools/proceedings.js";
 
 type MakeSejmRequestFn = (
   endpoint: string,
@@ -45,6 +45,39 @@ describe("getProceedingsTool", () => {
       "Failed to fetch the list of proceedings for term 10."
     );
     expect(result.content[0].text).toContain("Error: HTTP 404 Not Found");
+    expect(result.isError).toBe(true);
+  });
+});
+
+describe("getCurrentProceedingTool", () => {
+  it("returns the current sitting with its agenda as plain text", async () => {
+    makeSejmRequestMock.mockResolvedValue({
+      ok: true,
+      data: {
+        number: 69,
+        dates: ["2026-11-17"],
+        agenda: "<ol><li><div>Sprawozdanie Komisji</div></li></ol>",
+        votings: "<p><strong>w przygotowaniu</strong></p>",
+      },
+    });
+
+    const result = await getCurrentProceedingTool.handler({ term: 10 });
+
+    expect(makeSejmRequestMock).toHaveBeenCalledWith("/term10/proceedings/current");
+    expect(result.content[0].text).toContain("Fetched the current sitting for term 10:");
+    expect(result.content[0].text).toContain('"agenda": "- Sprawozdanie Komisji"');
+    expect(result.content[0].text).toContain('"votings": "w przygotowaniu"');
+  });
+
+  it("returns a failure message when the API fails", async () => {
+    makeSejmRequestMock.mockResolvedValue({
+      ok: false,
+      error: { status: 404, message: "HTTP 404 Not Found for /sejm/test" },
+    });
+
+    const result = await getCurrentProceedingTool.handler({ term: 10 });
+
+    expect(result.content[0].text).toContain("Failed to fetch the current sitting for term 10.");
     expect(result.isError).toBe(true);
   });
 });

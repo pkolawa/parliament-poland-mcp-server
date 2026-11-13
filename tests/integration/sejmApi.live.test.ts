@@ -6,6 +6,14 @@ import { getBilateralGroupsTool } from "../../src/tools/bilateralGroups.js";
 import { getProcessTool } from "../../src/tools/process.js";
 import { getTranscriptsTool } from "../../src/tools/transcripts.js";
 import { getWrittenQuestionsTool } from "../../src/tools/writtenQuestions.js";
+import { getVotingTool, searchVotingsTool } from "../../src/tools/votings.js";
+import { getMpVotingStatsTool, getMpVotingsTool } from "../../src/tools/mpVotings.js";
+import { getPassedProcessesTool } from "../../src/tools/processes.js";
+import { getCurrentProceedingTool } from "../../src/tools/proceedings.js";
+import { getStatementTool } from "../../src/tools/transcripts.js";
+import { getCommitteeSittingsTool, getCommitteeSittingTool } from "../../src/tools/committees.js";
+import { getInterpellationTextTool } from "../../src/tools/interpellations.js";
+import { getVideosByDateTool } from "../../src/tools/videos.js";
 
 const runLiveApiTests = process.env.RUN_LIVE_API_TESTS === "true";
 const liveDescribe = runLiveApiTests ? describe : describe.skip;
@@ -330,5 +338,27 @@ liveDescribe("Sejm API live integration", () => {
       result,
       `Fetched the transcript statements for sitting ${sitting.number} on ${sitting.dates[0]} in term ${term}:`
     );
+  });
+
+  // Historical records of the 10th term (first sitting on 2023-11-13) that will not change.
+  it.each([
+    ["get-voting", () => getVotingTool.handler({ term: 10, sitting: 1, votingNumber: 1 }), "votesByClub"],
+    ["search-votings", () => searchVotingsTool.handler({ term: 10, title: "Marszałka", limit: 1 }), "Found 1 votings"],
+    ["get-mp-voting-stats", () => getMpVotingStatsTool.handler({ term: 10, id: 1 }), "numVotings"],
+    ["get-mp-votings", () => getMpVotingsTool.handler({ term: 10, id: 1, sitting: 1, date: "2023-11-13" }), "votingNumber"],
+    ["get-passed-processes", () => getPassedProcessesTool.handler({ term: 10, limit: 1 }), "Fetched the list of passed processes"],
+    ["get-current-proceeding", () => getCurrentProceedingTool.handler({ term: 10 }), "Fetched the current sitting"],
+    ["get-statement", () => getStatementTool.handler({ term: 10, proceeding: 1, date: "2023-11-13", statementNum: 1 }), "Andrzej Duda"],
+    ["get-committee-sittings", () => getCommitteeSittingsTool.handler({ term: 10, code: "ASW", dateTo: "2023-11-30" }), "Wybór Prezydium"],
+    ["get-committee-sitting", () => getCommitteeSittingTool.handler({ term: 10, code: "ASW", num: 1 }), "Wybór Prezydium"],
+    ["get-interpellation-text", () => getInterpellationTextTool.handler({ term: 10, num: 10 }), "Interpelacja nr 10"],
+    ["get-interpellation-text (reply)", () => getInterpellationTextTool.handler({ term: 10, num: 10, replyKey: "CZLJNC" }), "Odpowiedź na interpelację nr 10"],
+    ["get-videos-by-date", () => getVideosByDateTool.handler({ term: 10, date: "2023-11-13" }), "playerLink"],
+  ] as const)("%s MCP tool returns success text for live API", async (_name, call, expected) => {
+    const result = await call();
+
+    expect(result.isError).toBeUndefined();
+    expect(result.content[0].text).toContain(expected);
+    expect(result.content[0].text).not.toMatch(/<\/?(p|div|html)\b/);
   });
 });

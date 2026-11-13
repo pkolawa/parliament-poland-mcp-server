@@ -119,7 +119,14 @@ export interface Proceeding {
   title: string;
   current: boolean;
   dates: string[];
+  /** HTML. */
   agenda?: string;
+  /** HTML. */
+  currentAffairs?: string;
+  /** HTML. */
+  schedule?: string;
+  /** HTML. */
+  votings?: string;
 }
 
 export interface VotingOption {
@@ -149,6 +156,57 @@ export interface Voting {
   totalVoted: number;
   links: Link[];
   votingOptions?: VotingOption[];
+}
+
+export interface VotingVote {
+  MP: number;
+  club: string;
+  firstName: string;
+  lastName: string;
+  secondName?: string;
+  /** YES, NO, ABSTAIN, ABSENT; VOTE_VALID for votings on a list. */
+  vote: string;
+  /** Votes per option for votings on a list, keyed by option index. */
+  listVotes?: Record<string, string>;
+}
+
+export interface VotingDetails extends Voting {
+  votes: VotingVote[];
+}
+
+export interface VotingStat {
+  sitting: number;
+  date: string;
+  numVotings: number;
+  numVoted: number;
+  numMissed: number;
+  absenceExcuse: boolean;
+}
+
+export interface MpVote {
+  votingNumber: number;
+  date: string;
+  title: string;
+  topic?: string;
+  description?: string;
+  kind: string;
+  vote: string;
+  listVotes?: Record<string, string>;
+}
+
+export interface CommitteeSitting {
+  num: number;
+  code: string;
+  date: string;
+  startDateTime?: string;
+  endDateTime?: string;
+  status: string;
+  room?: string;
+  remote?: boolean;
+  closed?: boolean;
+  /** HTML. */
+  agenda?: string;
+  video?: Video[];
 }
 
 export interface LegislativeProcess {
