@@ -1,39 +1,23 @@
-import { z } from "zod";
 import { makeSejmRequest } from "../utils/api.js";
-import type { BilateralGroup } from "../types/api.js";
+import { buildToolResponse, defineTool, listOutput, withTerm } from "../utils/tool.js";
+import { BilateralGroupSchema, type BilateralGroup } from "../types/api.js";
+import { term } from "./params.js";
 
-export const getBilateralGroupsTool = {
-  description: "Get a list of bilateral groups in the Sejm",
+export const getBilateralGroupsTool = defineTool({
+  title: "List bilateral groups",
+  description:
+    "List the bilateral groups of the Sejm (grupy bilateralne: parliamentary friendship groups for relations " +
+    "with the parliament of another country) with their Polish and English names and appointment dates.",
   schema: {
-    term: z.number().int().positive().describe("Term of the Sejm"),
+    term: term(),
   },
-  handler: async (args: { term: number }) => {
-    const { term } = args;
-    const groups = await makeSejmRequest<BilateralGroup[]>(`/term${term}/bilateralGroups`);
-
-    if (!groups.ok) {
-      return {
-        content: [
-          {
-            type: "text" as const,
-            text: `Failed to fetch the list of bilateral groups for term ${term}.\n\nError: ${groups.error.message}`,
-          },
-        ],
-        isError: true,
-      };
-    }
-
-    return {
-      content: [
-        {
-          type: "text" as const,
-          text: `${groups.notice ?? ""}Fetched the list of bilateral groups for term ${term}:\n\n${JSON.stringify(
-            groups.data,
-            null,
-            2
-          )}`,
-        },
-      ],
-    };
-  },
-};
+  outputSchema: listOutput(BilateralGroupSchema),
+  handler: ({ term }) =>
+    withTerm(term, async (term) =>
+      buildToolResponse(
+        await makeSejmRequest<BilateralGroup[]>(`/term${term}/bilateralGroups`),
+        `Fetched the list of bilateral groups for term ${term}:`,
+        `Failed to fetch the list of bilateral groups for term ${term}.`
+      )
+    ),
+});

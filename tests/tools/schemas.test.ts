@@ -12,7 +12,7 @@ const toolsWithOffset = Object.entries(tools).filter(
 
 describe("tool input schemas", () => {
   it.each(toolsWithOffset)("%s accepts offset 0 and rejects negative offsets", (_name, tool) => {
-    const schema = (tool.schema as z.ZodRawShape).offset;
+    const schema = (tool.schema as Record<string, z.ZodType>).offset;
 
     expect(schema.safeParse(0).success).toBe(true);
     expect(schema.safeParse(-1).success).toBe(false);

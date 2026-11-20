@@ -20,15 +20,22 @@ beforeEach(() => {
 
 describe("getTermsTool", () => {
   it("returns a success message with data", async () => {
-    makeSejmRequestMock.mockResolvedValue({ ok: true, data: [{ term: 10 }] });
+    makeSejmRequestMock.mockResolvedValue({ ok: true, data: [{ num: 9 }, { num: 10 }] });
+
+    const result = await getTermsTool.handler({});
+
+    expect(makeSejmRequestMock).toHaveBeenCalledWith("/term");
+    expect(result.content[0].text).toContain("Fetched 2 Sejm terms:");
+    expect(result.structuredContent).toEqual({ total: 2, offset: 0, items: [{ num: 9 }, { num: 10 }] });
+  });
+
+  it("paginates the list itself", async () => {
+    makeSejmRequestMock.mockResolvedValue({ ok: true, data: [{ num: 9 }, { num: 10 }] });
 
     const result = await getTermsTool.handler({ offset: 1, limit: 2 });
 
-    expect(makeSejmRequestMock).toHaveBeenCalledWith("/term", {
-      offset: 1,
-      limit: 2,
-    });
-    expect(result.content[0].text).toContain("Fetched the list of Sejm terms:");
+    expect(makeSejmRequestMock).toHaveBeenCalledWith("/term");
+    expect(result.structuredContent).toEqual({ total: 2, offset: 1, items: [{ num: 10 }] });
   });
 
   it("returns a failure message when the API fails", async () => {

@@ -1,12 +1,16 @@
 import { jest } from "@jest/globals";
+import { Client } from "@modelcontextprotocol/sdk/client/index.js";
+import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import { makeSejmRequest } from "../../src/utils/api.js";
+import { server } from "../../src/server.js";
+import { tools } from "../../src/tools/index.js";
 import { getMpsTool } from "../../src/tools/mps.js";
 import { getTermsTool } from "../../src/tools/terms.js";
 import { getBilateralGroupsTool } from "../../src/tools/bilateralGroups.js";
 import { getProcessTool } from "../../src/tools/process.js";
 import { getTranscriptsTool } from "../../src/tools/transcripts.js";
 import { getWrittenQuestionsTool } from "../../src/tools/writtenQuestions.js";
-import { getVotingTool, searchVotingsTool } from "../../src/tools/votings.js";
+import { getVotingsTool, getVotingTool, searchVotingsTool } from "../../src/tools/votings.js";
 import { getMpVotingStatsTool, getMpVotingsTool } from "../../src/tools/mpVotings.js";
 import { getPassedProcessesTool } from "../../src/tools/processes.js";
 import { getCurrentProceedingTool } from "../../src/tools/proceedings.js";
@@ -271,7 +275,7 @@ liveDescribe("Sejm API live integration", () => {
     const text = result.content[0]?.text ?? "";
 
     expect(text.includes("Failed to fetch")).toBe(false);
-    expect(text).toContain("Fetched the list of Sejm terms:");
+    expect(text).toMatch(/^Fetched 1 of \d+ Sejm terms \(offset 0; pass offset=1 for the next page\):/);
   });
 
   it("MPs MCP tool returns success text for live API", async () => {
@@ -285,7 +289,7 @@ liveDescribe("Sejm API live integration", () => {
     const text = result.content[0]?.text ?? "";
 
     expect(text.includes("Failed to fetch")).toBe(false);
-    expect(text).toContain(`Fetched the list of MPs for term ${termNumber}:`);
+    expect(text).toMatch(new RegExp(`^Fetched 1 of \\d+ MPs of term ${termNumber} \\(offset 0; pass offset=1`));
   });
 
   it("bilateral groups MCP tool returns success text for live API", async () => {
@@ -341,6 +345,41 @@ liveDescribe("Sejm API live integration", () => {
     );
   });
 
+  // The API returns these lists whole; the tools filter and paginate them.
+  it("get-members filters and paginates the MPs of a term", async () => {
+    const page = (await getMpsTool.handler({ term: 10, club: "Lewica", limit: 3, fields: ["profession"] }))
+      .structuredContent as { total: number; nextOffset?: number; items: Record<string, unknown>[] };
+    const holownia = (await getMpsTool.handler({ term: 10, name: "holownia szymon" })).structuredContent as {
+      items: { id: number; firstLastName: string }[];
+    };
+
+    expect(page.total).toBeGreaterThan(3);
+    expect(page.nextOffset).toBe(3);
+    expect(page.items).toHaveLength(3);
+    expect(page.items.every((mp) => mp.club === "Lewica" && "profession" in mp && !("email" in mp))).toBe(true);
+    expect(holownia.items.map((mp) => mp.firstLastName)).toEqual(["Szymon Hołownia"]);
+  });
+
+  it("get-votings filters and paginates the votings of a sitting", async () => {
+    // Sitting 1 of the 10th term: 8 votings on its first day, 2023-11-13.
+    const firstDay = (await getVotingsTool.handler({ term: 10, proceeding: 1, date: "2023-11-13" }))
+      .structuredContent as { total: number; items: { votingNumber: number; date: string }[] };
+    const all = (await getVotingsTool.handler({ term: 10, proceeding: 1, limit: 10 })).structuredContent as {
+      total: number;
+      nextOffset?: number;
+      items: unknown[];
+    };
+    const marshal = (await getVotingsTool.handler({ term: 10, proceeding: 1, title: "wybor marszalka" }))
+      .structuredContent as { items: { votingNumber: number }[] };
+
+    expect(firstDay.total).toBe(8);
+    expect(firstDay.items.every((v) => v.date.startsWith("2023-11-13"))).toBe(true);
+    expect(all.total).toBeGreaterThan(100);
+    expect(all.items).toHaveLength(10);
+    expect(all.nextOffset).toBe(10);
+    expect(marshal.items.map((v) => v.votingNumber)).toContain(1);
+  });
+
   // Historical records of the 10th term (first sitting on 2023-11-13) that will not change.
   it.each([
     ["get-voting", () => getVotingTool.handler({ term: 10, sitting: 1, votingNumber: 1 }), "votesByClub"],
@@ -362,6 +401,125 @@ liveDescribe("Sejm API live integration", () => {
     expect(result.content[0].text).toContain(expected);
     expect(result.content[0].text).not.toMatch(/<\/?(p|div|html)\b/);
   });
+  // Every tool through the MCP protocol, so the SDK validates the structured content of live
+  // responses against the output schemas (on the server and again in the client).
+  describe("every tool through MCP", () => {
+    const client = new Client({ name: "live-test", version: "1.0.0" });
+
+    beforeAll(async () => {
+      const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
+      await Promise.all([server.connect(serverTransport), client.connect(clientTransport)]);
+    });
+
+    afterAll(async () => {
+      await client.close();
+    });
+
+    // Historical records of the 10th term; `term` is omitted in a few calls to use the current term.
+    const calls: Record<keyof typeof tools, Record<string, unknown>> = {
+      "get-terms": {},
+      "get-members": { club: "KO", active: true, limit: 5, fields: ["profession", "birthDate"] },
+      "get-member": { term: 10, id: 1 },
+      "get-mp-voting-stats": { term: 10, id: 1 },
+      "get-mp-votings": { term: 10, id: 1, sitting: 1, date: "2023-11-13" },
+      "get-clubs": { term: 10 },
+      "get-club": { term: 10, id: "KO" },
+      "get-committees": { term: 10 },
+      "get-committee": { term: 10, id: "ASW" },
+      // Up to 2024-03-31: 7 sittings, enough for the offset and limit check.
+      "get-committee-sittings": { term: 10, code: "ASW", dateTo: "2024-03-31" },
+      "get-committee-sitting": { term: 10, code: "ASW", num: 1 },
+      "get-interpellations": { term: 10, limit: 3 },
+      "get-interpellation": { term: 10, id: 10 },
+      "get-interpellation-text": { term: 10, num: 10 },
+      "get-prints": { term: 10, limit: 3 },
+      "get-print": { term: 10, printNumber: "2" },
+      "get-proceedings": { term: 10 },
+      "get-proceeding": { term: 10, proceeding: 1 },
+      "get-current-proceeding": {},
+      "get-process": { term: 10, processNumber: "2" },
+      "get-processes": { term: 10, limit: 3 },
+      "get-passed-processes": { term: 10, limit: 3 },
+      "get-transcripts": { term: 10, proceeding: 1, date: "2023-11-13" },
+      "get-statement": { term: 10, proceeding: 1, date: "2023-11-13", statementNum: 1 },
+      "get-videos": { term: 10, limit: 3 },
+      "get-videos-by-date": { term: 10, date: "2023-11-13" },
+      "get-votings": { term: 10, proceeding: 1, date: "2023-11-13" },
+      "get-voting": { term: 10, sitting: 1, votingNumber: 1, includeVotes: true },
+      "search-votings": { term: 10, title: "Marszałka", limit: 3 },
+      "get-written-questions": { term: 10, limit: 3 },
+      "get-bilateral-groups": {},
+      "search-acts": { publisher: "DU", year: 2024, limit: 3 },
+      "get-act": { publisher: "DU", year: 1964, position: 93 },
+      "get-act-text": { publisher: "DU", year: 1964, position: 93, article: "415" },
+      "get-act-keywords": { query: "cywil" },
+    };
+
+    it.each(Object.entries(calls))("%s returns valid data", async (name, args) => {
+      const result = await client.callTool({ name, arguments: args });
+      const [content] = result.content as { type: string; text: string }[];
+
+      expect([name, result.isError ?? false, content.text.slice(0, 300)]).toEqual([name, false, expect.any(String)]);
+      if (tools[name as keyof typeof tools].outputSchema) {
+        expect(result.structuredContent).toBeDefined();
+      }
+    });
+
+    async function items(name: string, args: Record<string, unknown>): Promise<Record<string, unknown>[]> {
+      const result = await client.callTool({ name, arguments: args });
+      expect([name, result.isError ?? false]).toEqual([name, false]);
+      return (result.structuredContent as { items: Record<string, unknown>[] }).items;
+    }
+
+    // The spec lists offset and limit for only some endpoints; every tool that takes them must honour them.
+    const paginated = (Object.keys(calls) as (keyof typeof tools)[]).filter(
+      (name) => "limit" in tools[name].schema && "offset" in tools[name].schema
+    );
+
+    it.each(paginated)("%s honours offset and limit", async (name) => {
+      const base = { ...calls[name], offset: undefined, limit: undefined };
+      const firstThree = await items(name, { ...base, limit: 3 });
+      const second = await items(name, { ...base, offset: 1, limit: 1 });
+
+      expect(firstThree).toHaveLength(3);
+      expect(second).toEqual([firstThree[1]]);
+    });
+
+    it("get-interpellations filters by MP, recipient, dates and delay", async () => {
+      const [sample] = await items("get-interpellations", { term: 10, limit: 1 });
+      const mp = Number((sample.from as string[])[0]);
+      const recipient = (sample.to as string[])[0];
+
+      const byMp = await items("get-interpellations", { term: 10, mp, limit: 20 });
+      const byRecipient = await items("get-interpellations", { term: 10, recipient, limit: 20 });
+      const byDate = await items("get-interpellations", {
+        term: 10,
+        dateFrom: "2024-03-01",
+        dateTo: "2024-03-31",
+        limit: 20,
+      });
+      const delayed = await items("get-interpellations", { term: 10, delayed: true, limit: 20 });
+
+      expect(byMp.length).toBeGreaterThan(0);
+      expect(byMp.every((i) => (i.from as string[]).includes(String(mp)))).toBe(true);
+      expect(byRecipient.length).toBeGreaterThan(0);
+      expect(byRecipient.every((i) => (i.to as string[]).includes(recipient))).toBe(true);
+      expect(byDate.length).toBeGreaterThan(0);
+      expect(byDate.every((i) => String(i.sentDate) >= "2024-03-01" && String(i.sentDate) < "2024-04-01")).toBe(true);
+      expect(delayed.length).toBeGreaterThan(0);
+      expect(delayed.every((i) => Number(i.answerDelayedDays) > 0)).toBe(true);
+    });
+
+    it("get-proceeding returns the agenda of one sitting as text", async () => {
+      const result = await client.callTool({ name: "get-proceeding", arguments: { term: 10, proceeding: 1 } });
+      const sitting = result.structuredContent as { number: number; dates: string[]; agenda: string };
+
+      expect(sitting.number).toBe(1);
+      expect(sitting.dates[0]).toBe("2023-11-13");
+      expect(sitting.agenda).toContain("Ślubowanie");
+      expect(sitting.agenda).not.toMatch(/<\/?(p|div|li)\b/);
+    });
+  });
 });
 
 liveDescribe("ELI API live integration", () => {
@@ -373,7 +531,7 @@ liveDescribe("ELI API live integration", () => {
     [
       "search-acts",
       () => searchActsTool.handler({ title: "Kodeks cywilny", publisher: "DU", year: 1964, type: "Ustawa" }),
-      '"ELI": "DU/1964/93"',
+      '"ELI":"DU/1964/93"',
     ],
     ["get-act", () => getActTool.handler({ publisher: "DU", year: 1964, position: 93 }), "Ustawa z dnia 23 kwietnia 1964 r. - Kodeks cywilny."],
     [

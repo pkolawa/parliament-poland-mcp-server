@@ -32,29 +32,27 @@ describe("getInterpellationsTool", () => {
       limit: 2,
       dateFrom: "2020-01-01",
       dateTo: "2020-02-01",
+      modifiedSince: "2020-02-10T12:00:00",
       title: "transport",
-      number: 12,
       mp: 45,
-      club: "KO",
-      status: "ANSWERED",
-      sort_by: "date",
+      recipient: "minister zdrowia",
+      delayed: true,
+      sort_by: "-receiptDate",
     });
 
-    expect(makeSejmRequestMock).toHaveBeenCalledWith(
-      "/term10/interpellations",
-      {
-        offset: 1,
-        limit: 2,
-        dateFrom: "2020-01-01",
-        dateTo: "2020-02-01",
-        title: "transport",
-        number: 12,
-        mp: 45,
-        club: "KO",
-        status: "ANSWERED",
-        sort_by: "date",
-      }
-    );
+    // The API names the filters differently from the tool.
+    expect(makeSejmRequestMock).toHaveBeenCalledWith("/term10/interpellations", {
+      offset: 1,
+      limit: 2,
+      since: "2020-01-01",
+      till: "2020-02-01",
+      modifiedSince: "2020-02-10T12:00:00",
+      title: "transport",
+      from: 45,
+      to: "minister zdrowia",
+      delayed: true,
+      sort_by: "-receiptDate",
+    });
     expect(result.content[0].text).toContain(
       "Fetched the list of interpellations for term 10:"
     );

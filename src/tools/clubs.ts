@@ -1,75 +1,59 @@
 import { z } from "zod";
 import { makeSejmRequest } from "../utils/api.js";
-import type { Club } from "../types/api.js";
+import {
+  buildToolResponse,
+  defineTool,
+  describePage,
+  objectOutput,
+  pagedListOutput,
+  paginate,
+  withTerm,
+} from "../utils/tool.js";
+import { ClubSchema, type Club } from "../types/api.js";
+import { limitOrAll, offset, term } from "./params.js";
 
-export const getClubsTool = {
-  description: "Get a list of clubs for a given term",
+export const getClubsTool = defineTool({
+  title: "List clubs",
+  description:
+    "List the parliamentary clubs and circles (kluby i koła poselskie: the party groups of MPs in the Sejm) " +
+    "with their ID, full name, number of members and contact details. " +
+    "The ID (e.g. KO, PiS) is what the `club` field of MPs and votes refers to.",
   schema: {
-    term: z.number().int().positive().describe("Term of the Sejm"),
-    offset: z.number().int().nonnegative().optional().describe("Offset for pagination"),
-    limit: z.number().int().positive().optional().describe("Limit for pagination"),
+    term: term(),
+    offset: offset(),
+    limit: limitOrAll(),
   },
-  handler: async (args: { term: number, offset?: number, limit?: number }) => {
-    const { term, offset, limit } = args;
-    const clubs = await makeSejmRequest<Club[]>(
-      `/term${term}/clubs`,
-      { offset, limit },
-    );
+  outputSchema: pagedListOutput(ClubSchema),
+  // The API documents no offset or limit for this list, so it is paginated here.
+  handler: ({ term, offset, limit }) =>
+    withTerm(term, async (term) =>
+      buildToolResponse(
+        await makeSejmRequest<Club[]>(`/term${term}/clubs`),
+        (page) => `Fetched ${describePage(page, `clubs of term ${term}`)}:`,
+        `Failed to fetch the list of clubs for term ${term}.`,
+        (clubs: Club[]) => paginate(clubs, offset, limit)
+      )
+    ),
+});
 
-    if (!clubs.ok) {
-      return {
-        content: [
-          {
-            type: "text" as const,
-            text: `Failed to fetch the list of clubs for term ${term}.\n\nError: ${clubs.error.message}`,
-          },
-        ],
-        isError: true,
-      };
-    }
-
-    return {
-      content: [
-        {
-          type: "text" as const,
-          text: `${clubs.notice ?? ""}Fetched the list of clubs for term ${term}:\n\n${JSON.stringify(clubs.data, null, 2)}`,
-        },
-      ],
-    };
-  },
-};
-
-export const getClubTool = {
-  description: "Get detailed information about a specific club",
+export const getClubTool = defineTool({
+  title: "Get a club",
+  description:
+    "Get details of one parliamentary club or circle (klub, koło): full name, number of members and contact details.",
   schema: {
-    term: z.number().int().positive().describe("Term of the Sejm"),
-    id: z.string().describe("ID of the club (e.g., 'KO', 'PIS')"),
+    term: term(),
+    id: z
+      .string()
+      .regex(/^[A-Za-z0-9][A-Za-z0-9._-]*$/, "Expected a club ID such as KO")
+      .describe("ID of the club, e.g. KO or PiS: the `id` field from get-clubs"),
   },
-  handler: async (args: { term: number; id: string }) => {
-    const { term, id } = args;
-    const club = await makeSejmRequest<Club>(
-      `/term${term}/clubs/${id}`
-    );
-
-    if (!club.ok) {
-      return {
-        content: [
-          {
-            type: "text" as const,
-            text: `Failed to fetch details for club ${id} in term ${term}.\n\nError: ${club.error.message}`,
-          },
-        ],
-        isError: true,
-      };
-    }
-
-    return {
-      content: [
-        {
-          type: "text" as const,
-          text: `${club.notice ?? ""}Fetched details for club ${id} in term ${term}:\n\n${JSON.stringify(club.data, null, 2)}`,
-        },
-      ],
-    };
-  },
-};
+  outputSchema: objectOutput(ClubSchema),
+  handler: ({ term, id }) =>
+    withTerm(term, async (term) =>
+      buildToolResponse(
+        await makeSejmRequest<Club>(`/term${term}/clubs/${encodeURIComponent(id)}`),
+        `Fetched details for club ${id} in term ${term}:`,
+        `Failed to fetch details for club ${id} in term ${term}.`
+      )
+    ),
+});

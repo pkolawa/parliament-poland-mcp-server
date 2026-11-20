@@ -25,17 +25,13 @@ beforeEach(() => {
 
 describe("getCommitteesTool", () => {
   it("returns a success message with data", async () => {
-    makeSejmRequestMock.mockResolvedValue({ ok: true, data: [{ id: "KFP" }] });
+    makeSejmRequestMock.mockResolvedValue({ ok: true, data: [{ code: "ASW" }, { code: "KFP" }, { code: "OSZ" }] });
 
     const result = await getCommitteesTool.handler({ term: 10, offset: 1, limit: 2 });
 
-    expect(makeSejmRequestMock).toHaveBeenCalledWith("/term10/committees", {
-      offset: 1,
-      limit: 2,
-    });
-    expect(result.content[0].text).toContain(
-      "Fetched the list of committees for term 10:"
-    );
+    expect(makeSejmRequestMock).toHaveBeenCalledWith("/term10/committees");
+    expect(result.content[0].text).toContain("Fetched 2 of 3 committees of term 10 (offset 1; last page):");
+    expect(result.structuredContent).toEqual({ total: 3, offset: 1, items: [{ code: "KFP" }, { code: "OSZ" }] });
   });
 
   it("returns a failure message when the API fails", async () => {
@@ -99,9 +95,11 @@ describe("getCommitteeSittingsTool", () => {
       dateTo: "2024-02-10",
     });
 
-    expect(makeSejmRequestMock).toHaveBeenCalledWith("/term10/committees/ASW/sittings", {
-      cancelled: undefined,
-    });
+    expect(makeSejmRequestMock).toHaveBeenCalledWith(
+      "/term10/committees/ASW/sittings",
+      { cancelled: undefined },
+      { timeoutMs: 30_000 }
+    );
     const text = result.content[0].text;
     expect(text).toContain("Fetched 2 sittings of committee ASW in term 10:");
     expect(JSON.parse(text.slice(text.indexOf("\n\n") + 2))).toEqual([
@@ -122,7 +120,7 @@ describe("getCommitteeSittingsTool", () => {
     });
 
     expect(result.content[0].text).toContain("Fetched 1 sittings of committee ASW in term 10:");
-    expect(result.content[0].text).toContain('"num": 3');
+    expect(result.structuredContent).toEqual({ items: [{ num: 3, date: "2024-03-10" }] });
   });
 
   it("returns a failure message when the API fails", async () => {
@@ -149,8 +147,7 @@ describe("getCommitteeSittingTool", () => {
 
     expect(makeSejmRequestMock).toHaveBeenCalledWith("/term10/committees/ASW/sittings/1");
     expect(result.content[0].text).toContain("Fetched sitting 1 of committee ASW in term 10:");
-    expect(result.content[0].text).toContain('"agenda": "Wybór Prezydium"');
-    expect(result.content[0].text).toContain('"unid": "a"');
+    expect(result.structuredContent).toEqual({ num: 1, agenda: "Wybór Prezydium", video: [{ unid: "a" }] });
   });
 
   it("returns a failure message when the API fails", async () => {
