@@ -63,6 +63,12 @@ export const getCommitteeTool = defineTool({
     ),
 });
 
+/**
+ * Every sitting of the term with its video links comes in one response, about 300 KB for ASW in
+ * term 10, which has taken the API over 15 s.
+ */
+const COMMITTEE_SITTINGS_TIMEOUT_MS = 30_000;
+
 export const getCommitteeSittingsTool = defineTool({
   title: "List committee sittings",
   description:
@@ -87,7 +93,11 @@ export const getCommitteeSittingsTool = defineTool({
   handler: ({ term, code, dateFrom, dateTo, cancelled, offset = 0, limit }) =>
     withTerm(term, async (term) =>
       buildToolResponse(
-        await makeSejmRequest<CommitteeSitting[]>(`/term${term}/committees/${code}/sittings`, { cancelled }),
+        await makeSejmRequest<CommitteeSitting[]>(
+          `/term${term}/committees/${code}/sittings`,
+          { cancelled },
+          { timeoutMs: COMMITTEE_SITTINGS_TIMEOUT_MS }
+        ),
         (result) => `Fetched ${result.length} sittings of committee ${code} in term ${term}:`,
         `Failed to fetch the sittings of committee ${code} in term ${term}.`,
         // The API has no date filter or pagination and returns every sitting of the term with its

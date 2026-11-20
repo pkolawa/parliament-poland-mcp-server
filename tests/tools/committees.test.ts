@@ -95,9 +95,11 @@ describe("getCommitteeSittingsTool", () => {
       dateTo: "2024-02-10",
     });
 
-    expect(makeSejmRequestMock).toHaveBeenCalledWith("/term10/committees/ASW/sittings", {
-      cancelled: undefined,
-    });
+    expect(makeSejmRequestMock).toHaveBeenCalledWith(
+      "/term10/committees/ASW/sittings",
+      { cancelled: undefined },
+      { timeoutMs: 30_000 }
+    );
     const text = result.content[0].text;
     expect(text).toContain("Fetched 2 sittings of committee ASW in term 10:");
     expect(JSON.parse(text.slice(text.indexOf("\n\n") + 2))).toEqual([

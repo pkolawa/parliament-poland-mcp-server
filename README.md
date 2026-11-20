@@ -41,7 +41,7 @@ This configuration tells the client how to start the tool server.
 Every tool is read-only (`readOnlyHint: true`) and queries the public Sejm API (`openWorldHint: true`).
 `term` is optional in every Sejm tool and defaults to the current term of the Sejm; the legal act tools do not use it.
 Tools that return data (all except the text tools `get-interpellation-text`, `get-statement` and `get-act-text`) declare an `outputSchema` and return the data as `structuredContent` too; lists come as `{ "items": [...] }`.
-Lists that the Sejm API returns whole (MPs, votings of a sitting, clubs, committees, plenary sittings, terms) are filtered and paginated by the server and come as `{ "total", "offset", "nextOffset", "items" }`, where `nextOffset` is absent on the last page.
+Lists that the API returns whole (MPs, votings of a sitting, clubs, committees, plenary sittings, terms, keywords of legal acts) are filtered and paginated by the server and come as `{ "total", "offset", "nextOffset", "items" }`, where `nextOffset` is absent on the last page.
 
 | Tool | What it returns |
 | --- | --- |

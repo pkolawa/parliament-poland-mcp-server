@@ -381,9 +381,10 @@ describe("getActKeywordsTool", () => {
 
     expect(makeSejmRequestMock).toHaveBeenCalledWith("/keywords", undefined, { api: "eli" });
     expect(cywil.content[0].text).toBe(
-      'Found 2 keywords of legal acts matching "CYWIL":\n\n["kodeks cywilny","Służba Cywilna"]'
+      'Fetched 2 keywords of legal acts matching "CYWIL":\n\n' +
+        '{"total":2,"offset":0,"items":["kodeks cywilny","Służba Cywilna"]}'
     );
-    expect(cywil.structuredContent).toEqual({ items: ["kodeks cywilny", "Służba Cywilna"] });
+    expect(cywil.structuredContent).toEqual({ total: 2, offset: 0, items: ["kodeks cywilny", "Służba Cywilna"] });
     expect(zrodla.content[0].text).toContain("odnawialne źródła energii");
   });
 
@@ -392,7 +393,25 @@ describe("getActKeywordsTool", () => {
 
     const result = await getActKeywordsTool.handler({});
 
-    expect(result.content[0].text).toContain("Found 4 keywords of legal acts:");
+    expect(result.content[0].text).toContain("Fetched 4 keywords of legal acts:");
+  });
+
+  it("returns 200 keywords per page by default and paginates the rest", async () => {
+    const many = Array.from({ length: 250 }, (_, i) => `słowo ${i}`);
+    makeSejmRequestMock.mockResolvedValue({ ok: true, data: many });
+
+    const first = await getActKeywordsTool.handler({});
+    const rest = await getActKeywordsTool.handler({ offset: 200 });
+    const slice = await getActKeywordsTool.handler({ query: "SLOWO 1", offset: 1, limit: 2 });
+
+    expect(first.content[0].text).toContain(
+      "Fetched 200 of 250 keywords of legal acts (offset 0; pass offset=200 for the next page):"
+    );
+    expect(first.structuredContent).toMatchObject({ total: 250, offset: 0, nextOffset: 200 });
+    expect((first.structuredContent as { items: string[] }).items).toHaveLength(200);
+    expect(rest.structuredContent).toEqual({ total: 250, offset: 200, items: many.slice(200) });
+    // "słowo 1", "słowo 10"…"słowo 19", "słowo 100"…"słowo 199": the query ignores case and diacritics.
+    expect(slice.structuredContent).toEqual({ total: 111, offset: 1, nextOffset: 3, items: ["słowo 10", "słowo 11"] });
   });
 
   it("returns a failure message when the API fails", async () => {

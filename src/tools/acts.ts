@@ -4,9 +4,11 @@ import { actHtmlToText } from "../utils/html.js";
 import {
   buildToolResponse,
   defineTool,
+  describePage,
   errorResponse,
-  listOutput,
   objectOutput,
+  paginate,
+  pagedListOutput,
   type ToolResponse,
 } from "../utils/tool.js";
 import {
@@ -17,7 +19,7 @@ import {
   type ActReference,
   type ActUnit,
 } from "../types/api.js";
-import { date, offset } from "./params.js";
+import { date, limit, offset } from "./params.js";
 
 const ELI_API_BASE = "https://api.sejm.gov.pl/eli";
 // "415", "3a", "18^3a" as printed in the text, or "18_3_a" as named in the structure of the act.
@@ -34,6 +36,8 @@ const MAX_TEXT_LENGTH = 100_000;
 /** The HTML of a whole code is over 2 MB and takes the API several seconds to send. */
 const ACT_TEXT_TIMEOUT_MS = 30_000;
 const MAX_ARTICLE_MATCHES = 5;
+/** The API returns all of about 2,500 keywords (60,000 characters); 200 are about 6,000. */
+const KEYWORD_PAGE_SIZE = 200;
 
 const publisher = (description: string) => z.enum(["DU", "MP"]).describe(description);
 
@@ -402,16 +406,24 @@ export const getActKeywordsTool = defineTool({
       .string()
       .min(1)
       .optional()
-      .describe("Part of a keyword to look for, ignoring case and Polish diacritics (e.g. podat); omit to list all of about 2,500"),
+      .describe("Part of a keyword to look for, ignoring case and Polish diacritics (e.g. podat); omit to page through all of about 2,500"),
+    offset: offset(),
+    limit: limit(KEYWORD_PAGE_SIZE),
   },
-  outputSchema: listOutput(z.string().describe("Keyword, as accepted by the keywords of search-acts")),
-  handler: async ({ query }) => {
+  outputSchema: pagedListOutput(z.string().describe("Keyword, as accepted by the keywords of search-acts")),
+  // The API returns every keyword and has no filter or pagination, so both are done here.
+  handler: async ({ query, offset, limit = KEYWORD_PAGE_SIZE }) => {
     const needle = fold(query ?? "");
     return buildToolResponse(
       await makeSejmRequest<string[]>("/keywords", undefined, { api: "eli" }),
-      (matching) => `Found ${matching.length} keywords of legal acts${query ? ` matching "${query}"` : ""}:`,
+      (page) => `Fetched ${describePage(page, `keywords of legal acts${query ? ` matching "${query}"` : ""}`)}:`,
       "Failed to fetch the keywords of legal acts.",
-      (keywords) => keywords.filter((keyword) => fold(keyword).includes(needle))
+      (keywords: string[]) =>
+        paginate(
+          keywords.filter((keyword) => fold(keyword).includes(needle)),
+          offset,
+          limit
+        )
     );
   },
 });
