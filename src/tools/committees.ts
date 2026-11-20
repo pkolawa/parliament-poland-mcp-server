@@ -14,8 +14,10 @@ import {
 import {
   CommitteeSchema,
   CommitteeSittingSchema,
+  CommitteeSummarySchema,
   type Committee,
   type CommitteeSitting,
+  type CommitteeSummary,
 } from "../types/api.js";
 import { committeeCode, date, limitOrAll, offset, term } from "./params.js";
 
@@ -23,22 +25,28 @@ export const getCommitteesTool = defineTool({
   title: "List committees",
   description:
     "List the committees of the Sejm (komisje sejmowe: standing, extraordinary and investigative committees that " +
-    "examine bills and oversee the government) with their code, name, type and scope. " +
-    "The code (e.g. ASW) is the input of get-committee and get-committee-sittings.",
+    "examine bills and oversee the government) with their code, name, type and scope, without their members. " +
+    "The code (e.g. ASW) is the input of get-committee, which returns the members, and of get-committee-sittings.",
   schema: {
     term: term(),
     offset: offset(),
     limit: limitOrAll(),
   },
-  outputSchema: pagedListOutput(CommitteeSchema),
-  // The API documents no offset or limit for this list, so it is paginated here.
+  outputSchema: pagedListOutput(CommitteeSummarySchema),
+  // The API documents no offset or limit for this list, so it is paginated here. It also returns
+  // every member of every committee: 173 KB for the 40 committees of term 10, 28 KB without them.
   handler: ({ term, offset, limit }) =>
     withTerm(term, async (term) =>
       buildToolResponse(
         await makeSejmRequest<Committee[]>(`/term${term}/committees`),
         (page) => `Fetched ${describePage(page, `committees of term ${term}`)}:`,
         `Failed to fetch the list of committees for term ${term}.`,
-        (committees: Committee[]) => paginate(committees, offset, limit)
+        (committees: Committee[]) =>
+          paginate(
+            committees.map(({ members: _members, ...committee }): CommitteeSummary => committee),
+            offset,
+            limit
+          )
       )
     ),
 });

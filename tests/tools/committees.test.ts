@@ -34,6 +34,32 @@ describe("getCommitteesTool", () => {
     expect(result.structuredContent).toEqual({ total: 3, offset: 1, items: [{ code: "KFP" }, { code: "OSZ" }] });
   });
 
+  it("leaves the members out of the list and keeps the other fields", async () => {
+    makeSejmRequestMock.mockResolvedValue({
+      ok: true,
+      data: [
+        {
+          code: "ASW",
+          name: "Komisja Administracji i Spraw Wewnętrznych",
+          type: "STANDING",
+          subCommittees: ["ASW01S"],
+          members: [{ id: 1, lastFirstName: "Kowalski Jan", club: "KO", function: "przewodniczący" }],
+        },
+      ],
+    });
+
+    const result = await getCommitteesTool.handler({ term: 10 });
+
+    expect(result.structuredContent).toEqual({
+      total: 1,
+      offset: 0,
+      items: [
+        { code: "ASW", name: "Komisja Administracji i Spraw Wewnętrznych", type: "STANDING", subCommittees: ["ASW01S"] },
+      ],
+    });
+    expect(result.content[0].text).not.toContain("Kowalski");
+  });
+
   it("returns a failure message when the API fails", async () => {
     makeSejmRequestMock.mockResolvedValue({
       ok: false,
