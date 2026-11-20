@@ -7,7 +7,7 @@ Parliament Poland MCP Server — TypeScript MCP server exposing the Polish Parli
 ## Stack
 
 - TypeScript (ESM, strict mode)
-- @modelcontextprotocol/sdk (MCP server framework)
+- MCP TypeScript SDK v2: `@modelcontextprotocol/server` (runtime), `@modelcontextprotocol/client` (dev, for tests and the smoke test)
 - Zod 4 (input schemas, and output schemas of API responses)
 - esbuild (bundler → build/index.mjs)
 - Jest + ts-jest (testing)
@@ -24,7 +24,7 @@ Parliament Poland MCP Server — TypeScript MCP server exposing the Polish Parli
 ## Architecture
 
 - `src/index.ts` — entry point, stdio transport
-- `src/server.ts` — registers all tools with McpServer
+- `src/server.ts` — registers all tools with McpServer, wrapping each input shape in `z.object` (SDK v2 deprecates raw shapes)
 - `src/utils/api.ts` — HTTP client (`makeSejmRequest`): retries, in-memory cache, `format: "html"` for HTML endpoints, `api: "eli"` for the legal acts API (`/eli` instead of `/sejm`)
 - `src/utils/html.ts` — `htmlToText` for statement, interpellation and agenda HTML; `actHtmlToText` for the text of legal acts
 - `src/utils/tool.ts` — `defineTool`, `buildToolResponse` (API result → MCP response), `withTerm` (default to the current term), output schema helpers
@@ -46,7 +46,7 @@ Tool pattern: `handler: ({ term, ... }) => withTerm(term, async (term) => buildT
 
 ## Build
 
-esbuild bundles everything into a single `build/index.mjs` with `#!/usr/bin/env node` banner. The `@modelcontextprotocol/sdk` is external (peer dependency at runtime via npx).
+esbuild bundles everything into a single `build/index.mjs` with `#!/usr/bin/env node` banner. `@modelcontextprotocol/server` (and its subpath `/stdio`) is external, installed as a dependency when the package runs via npx. SDK v2 needs Zod 4.2+ (below that it drops `.describe()` text from schemas).
 
 `vendor/deepmerge` is a patched dev-only copy of deepmerge (GHSA-gcqx-w48m-w2h4, no upstream fix) that Jest's `jest-config` loads through `overrides`. `glob` and `minimatch` are overridden for the same reason. Keep `npm audit` at 0; see `vendor/deepmerge/README.md` before removing either.
 

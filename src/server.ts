@@ -1,4 +1,5 @@
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { McpServer } from "@modelcontextprotocol/server";
+import { z } from "zod";
 import { tools } from "./tools/index.js";
 
 export const server = new McpServer({
@@ -18,7 +19,8 @@ for (const [name, tool] of Object.entries(tools)) {
     {
       title: tool.title,
       description: tool.description,
-      inputSchema: tool.schema,
+      // SDK v2 deprecates raw shapes and would wrap them with its own copy of Zod.
+      inputSchema: z.object(tool.schema),
       outputSchema: tool.outputSchema,
       annotations: { title: tool.title, ...TOOL_ANNOTATIONS },
     },

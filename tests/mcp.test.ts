@@ -1,6 +1,5 @@
 import { jest } from "@jest/globals";
-import { Client } from "@modelcontextprotocol/sdk/client/index.js";
-import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
+import { Client, InMemoryTransport } from "@modelcontextprotocol/client";
 import { makeSejmRequest } from "../src/utils/api.js";
 import { server } from "../src/server.js";
 import { tools } from "../src/tools/index.js";
@@ -174,6 +173,11 @@ describe("MCP protocol", () => {
     // The current term could not be determined either, since every request fails.
     expect(result.isError).toBe(true);
     expect(result.structuredContent).toBeUndefined();
+  });
+
+  it("answers a call to an unknown tool with a protocol error", async () => {
+    // SDK v1 returned this as a tool result with isError; v2 rejects it with -32602.
+    await expect(client.callTool({ name: "no-such-tool", arguments: {} })).rejects.toThrow(/no-such-tool not found/);
   });
 
   it("rejects arguments outside the schema", async () => {
