@@ -1,8 +1,9 @@
 import { jest } from "@jest/globals";
+import { z } from "zod";
 import { tools } from "../src/tools/index.js";
 const registerTool = jest.fn();
 
-jest.mock("@modelcontextprotocol/sdk/server/mcp.js", () => ({
+jest.mock("@modelcontextprotocol/server", () => ({
   McpServer: jest.fn().mockImplementation(() => ({
     registerTool,
   })),
@@ -20,12 +21,17 @@ describe("server tool registration", () => {
         expect.objectContaining({
           title: tool.title,
           description: tool.description,
-          inputSchema: tool.schema,
+          inputSchema: expect.any(z.ZodObject),
           outputSchema: tool.outputSchema,
           annotations: { title: tool.title, readOnlyHint: true, openWorldHint: true },
         }),
         expect.any(Function)
       );
+
+      // SDK v2 deprecates raw shapes, so each shape is wrapped in z.object.
+      const call = registerTool.mock.calls.find(([registered]) => registered === name);
+      const { inputSchema } = call?.[1] as { inputSchema: z.ZodObject };
+      expect([name, inputSchema.shape]).toEqual([name, tool.schema]);
     }
   });
 

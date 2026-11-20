@@ -11,7 +11,7 @@ const buildOptions = {
   target: 'node22',
   outfile: 'build/index.mjs',
   format: 'esm',
-  external: ['@modelcontextprotocol/sdk'],
+  external: ['@modelcontextprotocol/server'],
   banner: {
     js: '#!/usr/bin/env node',
   },

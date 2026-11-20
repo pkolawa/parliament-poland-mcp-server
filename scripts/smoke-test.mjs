@@ -1,12 +1,12 @@
 #!/usr/bin/env node
 // Starts the built server over stdio, as an MCP client would, and checks that it
 // answers `initialize` and `tools/list`. Catches bundling problems that unit tests
-// cannot see, such as the external @modelcontextprotocol/sdk failing to resolve.
+// cannot see, such as the external @modelcontextprotocol/server failing to resolve.
 //
 // Usage: node scripts/smoke-test.mjs [path to built server, default build/index.mjs]
 
-import { Client } from "@modelcontextprotocol/sdk/client/index.js";
-import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
+import { Client } from "@modelcontextprotocol/client";
+import { StdioClientTransport } from "@modelcontextprotocol/client/stdio";
 
 const entry = process.argv[2] ?? "build/index.mjs";
 const TIMEOUT_MS = 15_000;
