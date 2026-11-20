@@ -87,6 +87,10 @@ export const CommitteeSchema = obj({
 });
 export type Committee = z.infer<typeof CommitteeSchema>;
 
+/** A committee in the list of get-committees: without its members, which get-committee returns. */
+export const CommitteeSummarySchema = CommitteeSchema.omit({ members: true });
+export type CommitteeSummary = z.infer<typeof CommitteeSummarySchema>;
+
 export const VideoSchema = obj({
   unid: str(),
   title: str(),

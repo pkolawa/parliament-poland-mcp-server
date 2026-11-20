@@ -52,7 +52,7 @@ Lists that the API returns whole (MPs, votings of a sitting, clubs, committees, 
 | `get-mp-votings` | How an MP voted in every voting on one sitting day |
 | `get-clubs` | Parliamentary clubs and circles (kluby i koła) |
 | `get-club` | Details of one club |
-| `get-committees` | Committees (komisje) with their codes |
+| `get-committees` | Committees (komisje) with their codes, without members |
 | `get-committee` | Details of one committee, with members |
 | `get-committee-sittings` | Sittings of a committee, filtered by date, with the agenda as text |
 | `get-committee-sitting` | One committee sitting with its agenda and videos |
@@ -137,6 +137,7 @@ Version 2.0 makes the tools easier for LLMs to use and contains breaking changes
 - **`get-proceedings`** no longer returns the agenda and schedules of each sitting as HTML, which made the list about 700 KB; it returns the number, title, dates and `current` flag. The new **`get-proceeding`** tool returns one sitting with its agenda as plain text.
 - **`get-members`** returns 100 MPs per page with `id`, `firstLastName`, `club`, `districtNum`, `districtName`, `voivodeship` and `active` (about 14 KB instead of 240 KB for all 494 MPs of the 10th term). Ask for more fields with `fields` (e.g. `["profession", "birthDate"]`); `get-member` returns everything about one MP. New filters: `club`, `name` (ignores case and Polish diacritics), `active`, `district` (number or name) and `voivodeship`.
 - **`get-votings`** returns 50 votings per page (the 147 votings of the first sitting of the 10th term were 87 KB) without the PDF link and the term. New filters: `date` (a day of the sitting) and `title` (words in the title, topic or description). `search-votings` returns the same fields.
+- **`get-committees`** no longer returns the members of each committee, which made the list of the 40 committees of the 10th term 173 KB instead of 28 KB; `get-committee` returns the members of one committee.
 - **Pagination of whole lists.** `offset` and `limit` of `get-members`, `get-votings`, `get-clubs`, `get-committees`, `get-proceedings` and `get-terms` are applied by the server, because the API does not document them for these lists. These tools now return `total` and `nextOffset` with the items. `get-clubs`, `get-committees`, `get-proceedings` and `get-terms` still return the whole list by default. `get-prints` returns 50 prints by default and paginates the list itself if the API returns more than `limit`.
 - **`get-print`** takes `printNumber` as a string, so additional prints such as `1070-A` can be fetched.
 - **`get-processes`** gains the `title` and `documentType` filters of `get-passed-processes`.

@@ -15,7 +15,7 @@ import { getMpVotingStatsTool, getMpVotingsTool } from "../../src/tools/mpVoting
 import { getPassedProcessesTool } from "../../src/tools/processes.js";
 import { getCurrentProceedingTool } from "../../src/tools/proceedings.js";
 import { getStatementTool } from "../../src/tools/transcripts.js";
-import { getCommitteeSittingsTool, getCommitteeSittingTool } from "../../src/tools/committees.js";
+import { getCommitteesTool, getCommitteeSittingsTool, getCommitteeSittingTool } from "../../src/tools/committees.js";
 import { getInterpellationTextTool } from "../../src/tools/interpellations.js";
 import { getVideosByDateTool } from "../../src/tools/videos.js";
 import { getActKeywordsTool, getActTextTool, getActTool, searchActsTool } from "../../src/tools/acts.js";
@@ -378,6 +378,17 @@ liveDescribe("Sejm API live integration", () => {
     expect(all.items).toHaveLength(10);
     expect(all.nextOffset).toBe(10);
     expect(marshal.items.map((v) => v.votingNumber)).toContain(1);
+  });
+
+  it("get-committees lists the committees of a term without their members", async () => {
+    const list = (await getCommitteesTool.handler({ term: 10 })).structuredContent as {
+      total: number;
+      items: Record<string, unknown>[];
+    };
+
+    expect(list.total).toBeGreaterThan(20);
+    expect(list.items.map((c) => c.code)).toContain("ASW");
+    expect(list.items.every((c) => typeof c.name === "string" && !("members" in c))).toBe(true);
   });
 
   // Historical records of the 10th term (first sitting on 2023-11-13) that will not change.
